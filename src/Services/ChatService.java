@@ -1,12 +1,14 @@
 package Services;
 
 import Entities.*;
+import Utils.GroupPermission;
 
 import java.util.*;
 
 public class ChatService {
     private Map<String, User> users = new HashMap<>();
     private List<ChatRoom> chatRooms = new ArrayList<>();
+    private TypingNotifier typingNotifier = new TypingNotifier();
 
     public User registerUser(String username) {
         if (users.containsKey(username)) return users.get(username);
@@ -23,19 +25,28 @@ public class ChatService {
 
     public GroupChat createGroupChat(String name, User creator) {
         GroupChat group = new GroupChat(name, creator);
+        group.setPermissions(creator, GroupPermission.OWNER);
         chatRooms.add(group);
         return group;
     }
 
     public void sendMessage(ChatRoom room, User sender, String content) {
         if (room.getParticipants().contains(sender)) {
-            room.sendMessage(new Message(content, sender));
+            Message msg = new Message(content, sender);
+            msg.initializeStatus(room.getParticipants());
+            room.sendMessage(msg);
         }
     }
 
     public void addUserToGroup(GroupChat group, User user) {
         if (group.canAdd(user)) {
             group.addParticipant(user);
+        }
+    }
+
+    public void kickUserFromGroup(GroupChat group, User user) {
+        if (group.getPermission(user) != GroupPermission.OWNER) {
+            group.removeParticipant(user);
         }
     }
 
@@ -51,6 +62,10 @@ public class ChatService {
         room.getMessages().stream()
                 .filter(msg -> msg.getContent().toLowerCase().contains(keyword.toLowerCase()))
                 .forEach(System.out::println);
+    }
+
+    public TypingNotifier getTypingNotifier() {
+        return typingNotifier;
     }
 }
 

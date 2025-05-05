@@ -1,5 +1,5 @@
 package Utils;
 
 public enum NotificationStatus {
-    Typing, Read
+    NEW, READ
 }
