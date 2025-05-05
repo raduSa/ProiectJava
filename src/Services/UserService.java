@@ -1,8 +1,10 @@
 package Services;
 
 import Entities.ChatRoom;
+import Entities.GroupChat;
 import Entities.Message;
 import Entities.User;
+import Utils.GroupPermission;
 import Utils.MessageStatus;
 import Utils.UserStatus;
 
@@ -66,7 +68,24 @@ public class UserService {
         return count;
     }
 
+    public void addUserToGroup(GroupChat group, User user) {
+        group.addParticipant(user);
+    }
+
+    public void kickUserFromGroup(GroupChat group, User user) {
+        if (group.getPermission(user) != GroupPermission.OWNER) {
+            group.removeParticipant(user);
+        }
+        else {
+            System.out.println("Only the owner can kick users!");
+        }
+    }
+
     public void showUserStatus(User user) {
         System.out.println("User " + user.getUsername() + " is currently " + user.getStatus());
+    }
+
+    public User getUser() {
+        return user;
     }
 }

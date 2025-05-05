@@ -28,4 +28,9 @@ public abstract class ChatRoom {
     }
 
     public abstract boolean canAdd(User user);
+
+    @Override
+    public String toString() {
+        return name;
+    }
 }

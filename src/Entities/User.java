@@ -8,7 +8,7 @@ public class User implements Comparable<User> {
 
     public User(String username) {
         this.username = username;
-        this.status = UserStatus.ONLINE;
+        this.status = UserStatus.OFFLINE;
     }
 
     public String getUsername() { return username; }

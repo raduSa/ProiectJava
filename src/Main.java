@@ -1,12 +1,155 @@
+import Entities.ChatRoom;
 import Entities.GroupChat;
 import Entities.PrivateChat;
 import Entities.User;
 import Services.ChatService;
 import Services.UserService;
 
+import java.util.Objects;
+import java.util.Scanner;
+
 public class Main {
+    static ChatService service = new ChatService();
+
     public static void main(String[] args) {
-        ChatService service = new ChatService();
+        initialise();
+
+        Scanner scanner = new Scanner(System.in);
+        UserService userService = null;
+
+        while (true) {
+            System.out.println("\nWhat is thy will:");
+            String input = scanner.nextLine();
+            String[] tokens = input.split(" ", 3);
+
+            User user;
+            ChatRoom room;
+
+            switch(tokens[0]) {
+                // SHOW_ALL USERS/ROOMS
+                case "SHOW_ALL":
+                    if (Objects.equals(tokens[1], "USERS")) {
+                        service.getUsers().values().forEach(System.out::println);
+                    }
+                    else if (Objects.equals(tokens[1], "ROOMS")) {
+                        service.getChatRooms().forEach(System.out::println);
+                    }
+                    break;
+                // REGISTER [username]
+                case "REGISTER":
+                    user = service.registerUser(tokens[1]);
+                    System.out.printf("Registered user: %s", user);
+                    break;
+                // LOGIN [username]
+                case "LOGIN":
+                    userService = new UserService(service.getUsers().get(tokens[1]));
+                    userService.login();
+                    System.out.printf("Logged in as user: %s", userService.getUser());
+                    break;
+                // LOGOUT
+                case "LOGOUT":
+                    if (userService == null) {
+                        System.out.println("Not logged in!");
+                        break;
+                    }
+                    userService.logout();
+                    userService = null;
+                    System.out.println("Logged out");
+                    break;
+                // SHOW ROOMS / MSG [room] / PARTICIPANTS [room]
+                case "SHOW":
+                    if (userService == null) {
+                        System.out.println("Not logged in!");
+                        break;
+                    }
+                    if (Objects.equals(tokens[1], "ROOMS")) {
+                        System.out.println("User is part of the following rooms:");
+                        final UserService finalUserService = userService;
+                        service.getChatRooms().stream().filter(chatRoom -> chatRoom.getParticipants().
+                                contains(finalUserService.getUser())).forEach(System.out::println);
+                    }
+                    else if (Objects.equals(tokens[1], "MSG")) {
+                        System.out.printf("Messages from room %s: \n", tokens[2]);
+                        service.getChatHistory(service.getRoomByName(tokens[2])).forEach(System.out::println);
+                    }
+                    else if (Objects.equals(tokens[1], "PARTICIPANTS")) {
+                        System.out.printf("Participants of room %s: \n", tokens[2]);
+                        service.getChatParticipants(service.getRoomByName(tokens[2])).forEach(System.out::println);
+                    }
+                    break;
+                // SEND [room] [msg]
+                case "SEND":
+                    if (userService == null) {
+                        System.out.println("Not logged in!");
+                        break;
+                    }
+                    service.sendMessage(service.getRoomByName(tokens[1]), userService.getUser(), tokens[2]);
+                    break;
+                // ADD [room] [username]
+                case "ADD":
+                    if (userService == null) {
+                        System.out.println("Not logged in!");
+                        break;
+                    }
+                    room = service.getRoomByName(tokens[1]);
+                    user = service.getUserByName(tokens[2]);
+                    if (!(room instanceof GroupChat)) {
+                        System.out.println("Room given is not a group chat!");
+                        break;
+                    }
+                    if (user == null) {
+                        System.out.println("User given does not exist!");
+                        break;
+                    }
+                    userService.addUserToGroup((GroupChat)room, user);
+                    break;
+                // KICK [room] [username[
+                case "KICK":
+                    if (userService == null) {
+                        System.out.println("Not logged in!");
+                        break;
+                    }
+                    room = service.getRoomByName(tokens[1]);
+                    user = service.getUserByName(tokens[2]);
+                    if (!(room instanceof GroupChat)) {
+                        System.out.println("Room given is not a group chat!");
+                        break;
+                    }
+                    if (user == null) {
+                        System.out.println("User given does not exist!");
+                        break;
+                    }
+                    userService.kickUserFromGroup((GroupChat)room, user);
+                    break;
+                // CREATE GROUP [name] / PRIVATE [username]
+                case "CREATE":
+                    if (userService == null) {
+                        System.out.println("Not logged in!");
+                        break;
+                    }
+                    if (Objects.equals(tokens[1], "GROUP")) {
+                        if (service.getRoomByName(tokens[2]) != null) {
+                            System.out.println("A group with this name already exists!");
+                            break;
+                        }
+                        service.createGroupChat(tokens[2], userService.getUser());
+                    }
+                    else if (Objects.equals(tokens[1], "PRIVATE")) {
+                        User otherUser = service.getUserByName(tokens[2]);
+                        if (otherUser == null) {
+                            System.out.println("User does not exist!");
+                            break;
+                        }
+                        service.createPrivateChat(userService.getUser(), otherUser);
+                    }
+                    break;
+            }
+
+        }
+    }
+
+    private static void initialise() {
+
 
         User user1 = service.registerUser("user1");
         User user2 = service.registerUser("user2");
@@ -53,8 +196,8 @@ public class Main {
         // Group chat
 
         GroupChat groupChat = service.createGroupChat("Group", user1);
-        service.addUserToGroup(groupChat, user2);
-        service.addUserToGroup(groupChat, user3);
+        userService1.addUserToGroup(groupChat, user2);
+        userService1.addUserToGroup(groupChat, user3);
 
         service.sendMessage(groupChat, user3, "Hello everyone!");
         service.sendMessage(groupChat, user2, "Hey there");

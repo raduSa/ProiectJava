@@ -38,18 +38,6 @@ public class ChatService {
         }
     }
 
-    public void addUserToGroup(GroupChat group, User user) {
-        if (group.canAdd(user)) {
-            group.addParticipant(user);
-        }
-    }
-
-    public void kickUserFromGroup(GroupChat group, User user) {
-        if (group.getPermission(user) != GroupPermission.OWNER) {
-            group.removeParticipant(user);
-        }
-    }
-
     public List<Message> getChatHistory(ChatRoom room) {
         return room.getMessages();
     }
@@ -66,6 +54,27 @@ public class ChatService {
 
     public TypingNotifier getTypingNotifier() {
         return typingNotifier;
+    }
+
+    public ChatRoom getRoomByName(String roomName) {
+        for (ChatRoom room : chatRooms) {
+            if (Objects.equals(room.getName(), roomName)) {
+                return room;
+            }
+        }
+        return null;
+    }
+
+    public User getUserByName(String username) {
+        return users.getOrDefault(username, null);
+    }
+
+    public Map<String, User> getUsers() {
+        return users;
+    }
+
+    public List<ChatRoom> getChatRooms() {
+        return chatRooms;
     }
 }
 
