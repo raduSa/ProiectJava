@@ -8,7 +8,6 @@ import java.util.*;
 public class ChatService {
     private Map<String, User> users = new HashMap<>();
     private List<ChatRoom> chatRooms = new ArrayList<>();
-    private TypingNotifier typingNotifier = new TypingNotifier();
 
     public User registerUser(String username) {
         if (users.containsKey(username)) return users.get(username);
@@ -50,10 +49,6 @@ public class ChatService {
         room.getMessages().stream()
                 .filter(msg -> msg.getContent().toLowerCase().contains(keyword.toLowerCase()))
                 .forEach(System.out::println);
-    }
-
-    public TypingNotifier getTypingNotifier() {
-        return typingNotifier;
     }
 
     public ChatRoom getRoomByName(String roomName) {

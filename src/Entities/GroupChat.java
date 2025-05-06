@@ -18,12 +18,22 @@ public class GroupChat extends ChatRoom {
         return true;
     }
 
+    @Override
+    public void addParticipant(User user) {
+        super.addParticipant(user);
+        permissions.put(user, GroupPermission.MEMBER);
+    }
+
     public void setPermissions(User user, GroupPermission permission) {
         permissions.put(user, permission);
     }
 
     public GroupPermission getPermission(User user) {
         return permissions.get(user);
+    }
+
+    public void showPermissions() {
+        permissions.forEach((key, value) -> System.out.println("User: " + key + ", Role: " + value));
     }
 }
 

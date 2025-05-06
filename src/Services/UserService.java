@@ -68,17 +68,40 @@ public class UserService {
         return count;
     }
 
-    public void addUserToGroup(GroupChat group, User user) {
-        group.addParticipant(user);
+    public void addUserToGroup(GroupChat group, User otherUser) {
+        if (group.getPermission(user) == GroupPermission.MEMBER) {
+            System.out.println("Only the owner and admins can add new members!");
+            return;
+        }
+        group.addParticipant(otherUser);
     }
 
-    public void kickUserFromGroup(GroupChat group, User user) {
+    public void kickUserFromGroup(GroupChat group, User otherUser) {
+        if (group.getPermission(user) == GroupPermission.MEMBER) {
+            System.out.println("Only the owner and admins can kick users!");
+            return;
+        }
+        if (group.getPermission(otherUser) == GroupPermission.OWNER) {
+            System.out.println("Cannot kick the owner!");
+            return;
+        }
+        group.removeParticipant(otherUser);
+    }
+
+    public void makeUserAdmin(GroupChat group, User otherUser) {
         if (group.getPermission(user) != GroupPermission.OWNER) {
-            group.removeParticipant(user);
+            System.out.println("Only the owner can make users admins!");
+            return;
         }
-        else {
-            System.out.println("Only the owner can kick users!");
+        group.setPermissions(otherUser, GroupPermission.ADMIN);
+    }
+
+    public void removeUserAdmin(GroupChat group, User otherUser) {
+        if (group.getPermission(user) != GroupPermission.OWNER) {
+            System.out.println("Only the owner can take away roles!");
+            return;
         }
+        group.setPermissions(otherUser, GroupPermission.MEMBER);
     }
 
     public void showUserStatus(User user) {

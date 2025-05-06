@@ -10,12 +10,31 @@ import java.util.Scanner;
 
 public class Main {
     static ChatService service = new ChatService();
+    static UserService userService = null;
 
     public static void main(String[] args) {
         initialise();
 
         Scanner scanner = new Scanner(System.in);
-        UserService userService = null;
+
+        // COMMANDS:
+        // SHOW_ALL USERS / ROOMS
+        // REGISTER [username]
+        // LOGIN [username]
+        // LOGOUT [username]
+        // SHOW ROOMS / MSG [room] / PARTICIPANTS [room] -> for user currently logged in
+        // SEND [room] [msg] -> send message
+        // ADD_TO [room] [username] -> add to group
+        // KICK [room] [username] -> kick from group
+        // CREATE GROUP [name] / PRIVATE [username]
+        // SEARCH [room] [keyword] -> search for keyword in room messages
+        // MSG_STATUS [room] -> show status of room messages
+        // READ [room] -> read all messages from the room
+        // UNREAD [room] -> show all unread messages from the room
+        // UNREAD_CNT [room] -> show number of unread messages
+        // ADMIN [room] [username] -> make user admin
+        // REM_ADMIN -> remove admin role from user
+        // ROLES [room] -> show roles of all participants in a room
 
         while (true) {
             System.out.println("\nWhat is thy will:");
@@ -48,20 +67,14 @@ public class Main {
                     break;
                 // LOGOUT
                 case "LOGOUT":
-                    if (userService == null) {
-                        System.out.println("Not logged in!");
-                        break;
-                    }
+                    if(!checkLoggedIn()) break;
                     userService.logout();
                     userService = null;
                     System.out.println("Logged out");
                     break;
                 // SHOW ROOMS / MSG [room] / PARTICIPANTS [room]
                 case "SHOW":
-                    if (userService == null) {
-                        System.out.println("Not logged in!");
-                        break;
-                    }
+                    if(!checkLoggedIn()) break;
                     if (Objects.equals(tokens[1], "ROOMS")) {
                         System.out.println("User is part of the following rooms:");
                         final UserService finalUserService = userService;
@@ -79,18 +92,12 @@ public class Main {
                     break;
                 // SEND [room] [msg]
                 case "SEND":
-                    if (userService == null) {
-                        System.out.println("Not logged in!");
-                        break;
-                    }
+                    if(!checkLoggedIn()) break;
                     service.sendMessage(service.getRoomByName(tokens[1]), userService.getUser(), tokens[2]);
                     break;
-                // ADD [room] [username]
-                case "ADD":
-                    if (userService == null) {
-                        System.out.println("Not logged in!");
-                        break;
-                    }
+                // ADD_TO [room] [username]
+                case "ADD_TO":
+                    if(!checkLoggedIn()) break;
                     room = service.getRoomByName(tokens[1]);
                     user = service.getUserByName(tokens[2]);
                     if (!(room instanceof GroupChat)) {
@@ -102,13 +109,11 @@ public class Main {
                         break;
                     }
                     userService.addUserToGroup((GroupChat)room, user);
+                    System.out.println("Added user " + user);
                     break;
-                // KICK [room] [username[
+                // KICK [room] [username]
                 case "KICK":
-                    if (userService == null) {
-                        System.out.println("Not logged in!");
-                        break;
-                    }
+                    if(!checkLoggedIn()) break;
                     room = service.getRoomByName(tokens[1]);
                     user = service.getUserByName(tokens[2]);
                     if (!(room instanceof GroupChat)) {
@@ -120,13 +125,11 @@ public class Main {
                         break;
                     }
                     userService.kickUserFromGroup((GroupChat)room, user);
+                    System.out.println("Kicked user " + user);
                     break;
                 // CREATE GROUP [name] / PRIVATE [username]
                 case "CREATE":
-                    if (userService == null) {
-                        System.out.println("Not logged in!");
-                        break;
-                    }
+                    if(!checkLoggedIn()) break;
                     if (Objects.equals(tokens[1], "GROUP")) {
                         if (service.getRoomByName(tokens[2]) != null) {
                             System.out.println("A group with this name already exists!");
@@ -142,6 +145,98 @@ public class Main {
                         }
                         service.createPrivateChat(userService.getUser(), otherUser);
                     }
+                    break;
+                // SEARCH [room] [keyword]
+                case "SEARCH":
+                    if(!checkLoggedIn()) break;
+                    room = service.getRoomByName(tokens[1]);
+                    String keyword = tokens[2];
+                    if (room == null) {
+                        System.out.println("Room does not exist");
+                        break;
+                    }
+                    service.searchMessages(room, keyword);
+                    break;
+                // MSG_STATUS [room]
+                case "MSG_STATUS":
+                    if(!checkLoggedIn()) break;
+                    room = service.getRoomByName(tokens[1]);
+                    if (room == null) {
+                        System.out.println("Room does not exist");
+                        break;
+                    }
+                    userService.showMessageStatus(room);
+                    break;
+                // READ [room]
+                case "READ":
+                    if(!checkLoggedIn()) break;
+                    room = service.getRoomByName(tokens[1]);
+                    if (room == null) {
+                        System.out.println("Room does not exist");
+                        break;
+                    }
+                    userService.simulateReading(room);
+                    break;
+                // UNREAD [room]
+                case "UNREAD":
+                    if(!checkLoggedIn()) break;
+                    room = service.getRoomByName(tokens[1]);
+                    if (room == null) {
+                        System.out.println("Room does not exist");
+                        break;
+                    }
+                    userService.showUnreadMessages(room);
+                    break;
+                // UNREAD_CNT [room]
+                case "UNREAD_CNT":
+                    if(!checkLoggedIn()) break;
+                    room = service.getRoomByName(tokens[1]);
+                    if (room == null) {
+                        System.out.println("Room does not exist");
+                        break;
+                    }
+                    System.out.println(userService.getUnreadMessageCount(room));
+                    break;
+                // ADMIN [room] [username]
+                case "ADMIN":
+                    if(!checkLoggedIn()) break;
+                    room = service.getRoomByName(tokens[1]);
+                    user = service.getUserByName(tokens[2]);
+                    if (!(room instanceof GroupChat)) {
+                        System.out.println("Room given is not a group chat!");
+                        break;
+                    }
+                    if (user == null) {
+                        System.out.println("User given does not exist!");
+                        break;
+                    }
+                    userService.makeUserAdmin((GroupChat) room, user);
+                    System.out.println("Made user " + user + " admin");
+                    break;
+                // REM_ADMIN [room] [username]
+                case "REM_ADMIN":
+                    if(!checkLoggedIn()) break;
+                    room = service.getRoomByName(tokens[1]);
+                    user = service.getUserByName(tokens[2]);
+                    if (!(room instanceof GroupChat)) {
+                        System.out.println("Room given is not a group chat!");
+                        break;
+                    }
+                    if (user == null) {
+                        System.out.println("User given does not exist!");
+                        break;
+                    }
+                    userService.removeUserAdmin((GroupChat) room, user);
+                    System.out.println("Removed users " + user + " admin role");
+                    break;
+                // ROLES [room]
+                case "ROLES":
+                    room = service.getRoomByName(tokens[1]);
+                    if (!(room instanceof GroupChat)) {
+                        System.out.println("Room given is not a group chat!");
+                        break;
+                    }
+                    ((GroupChat) room).showPermissions();
                     break;
             }
 
@@ -166,13 +261,6 @@ public class Main {
         // Users Login
         userService1.login();
         userService2.login();
-
-        // Simulate typing
-        service.getTypingNotifier().startTyping(privateChat, user1);
-        service.getTypingNotifier().startTyping(privateChat, user2);
-        service.getTypingNotifier().showTyping(privateChat);
-        service.getTypingNotifier().stopTyping(privateChat, user1);
-        service.getTypingNotifier().stopTyping(privateChat, user2);
 
         // Send Messages
         service.sendMessage(privateChat, user1, "Hi");
@@ -201,6 +289,9 @@ public class Main {
 
         service.sendMessage(groupChat, user3, "Hello everyone!");
         service.sendMessage(groupChat, user2, "Hey there");
+        service.sendMessage(groupChat, user1, "Whats up");
+        service.sendMessage(groupChat, user2, "Epic");
+        service.sendMessage(groupChat, user3, "I love pancakes");
 
         System.out.println("\nGroup Chat Members:");
         service.getChatParticipants(groupChat).forEach(System.out::println);
@@ -210,5 +301,13 @@ public class Main {
 
         System.out.println("\nSearch for 'hello' in Group Chat:");
         service.searchMessages(groupChat, "hello");
+    }
+
+    private static Boolean checkLoggedIn() {
+        if (userService == null) {
+            System.out.println("Not logged in!");
+            return Boolean.FALSE;
+        }
+        return Boolean.TRUE;
     }
 }
