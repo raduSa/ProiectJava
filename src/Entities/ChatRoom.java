@@ -27,7 +27,7 @@ public abstract class ChatRoom {
         participants.remove(user);
     }
 
-    public abstract boolean canAdd(User user);
+    public abstract Integer emptySlots();
 
     @Override
     public String toString() {

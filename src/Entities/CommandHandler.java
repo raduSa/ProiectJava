@@ -1,18 +1,22 @@
 package Entities;
 
 import Services.ChatService;
+import Services.SessionService;
 import Services.UserService;
 
+import java.nio.channels.SeekableByteChannel;
 import java.util.Objects;
 
 public class CommandHandler {
     private String[] tokens;
     private String input;
     ChatService service;
+    SessionService sessionService;
     UserService userService = null;
 
-    public CommandHandler(ChatService chatService) {
+    public CommandHandler(ChatService chatService, SessionService sessionService) {
         service = chatService;
+        this.sessionService = sessionService;
     }
 
     public void handleCommand() {
@@ -20,13 +24,19 @@ public class CommandHandler {
         ChatRoom room;
 
         switch(tokens[0]) {
-            // SHOW_ALL USERS/ROOMS
+            // SHOW_ALL USERS / ROOMS / ACTIVE_SESSIONS / INACTIVE_SESSIONS
             case "SHOW_ALL":
                 if (Objects.equals(tokens[1], "USERS")) {
                     service.getUsers().values().forEach(System.out::println);
                 }
                 else if (Objects.equals(tokens[1], "ROOMS")) {
                     service.getChatRooms().forEach(System.out::println);
+                }
+                else if (Objects.equals(tokens[1], "ACTIVE_SESSIONS")) {
+                    sessionService.showActiveSessions();
+                }
+                else if (Objects.equals(tokens[1], "INACTIVE_SESSIONS")) {
+                    sessionService.showInactiveSessions();
                 }
                 break;
             // REGISTER [username]
@@ -36,14 +46,17 @@ public class CommandHandler {
                 break;
             // LOGIN [username]
             case "LOGIN":
-                userService = new UserService(service.getUsers().get(tokens[1]));
+                user = service.getUsers().get(tokens[1]);
+                userService = new UserService(user);
                 userService.login();
+                sessionService.login(user);
                 System.out.printf("Logged in as user: %s", userService.getUser());
                 break;
             // LOGOUT
             case "LOGOUT":
                 if(!checkLoggedIn()) break;
                 userService.logout();
+                sessionService.logout(userService.getUser());
                 userService = null;
                 System.out.println("Logged out");
                 break;
@@ -63,6 +76,9 @@ public class CommandHandler {
                 else if (Objects.equals(tokens[1], "PARTICIPANTS")) {
                     System.out.printf("Participants of room %s: \n", tokens[2]);
                     service.getChatParticipants(service.getRoomByName(tokens[2])).forEach(System.out::println);
+                }
+                else if (Objects.equals(tokens[1], "EMPTY_SLOTS")) {
+                    service.showEmptySlots(service.getRoomByName(tokens[2]));
                 }
                 break;
             // SEND [room] [msg]

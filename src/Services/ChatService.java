@@ -71,5 +71,9 @@ public class ChatService {
     public List<ChatRoom> getChatRooms() {
         return chatRooms;
     }
+
+    public void showEmptySlots(ChatRoom room) {
+        System.out.println("Number of empty slots: " + room.emptySlots());
+    }
 }
 

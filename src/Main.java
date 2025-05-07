@@ -1,27 +1,28 @@
 import Entities.*;
 import Services.ChatService;
+import Services.SessionService;
 import Services.UserService;
 
-import java.util.Objects;
 import java.util.Scanner;
 
 public class Main {
     public static ChatService service = new ChatService();
+    public static SessionService sessionService = new SessionService();
 
     public static void main(String[] args) {
         initialise();
 
         Scanner scanner = new Scanner(System.in);
-        CommandHandler handler = new CommandHandler(service);
+        CommandHandler handler = new CommandHandler(service, sessionService);
 
         // can add a Command class to handle command
 
         // COMMANDS:
-        // SHOW_ALL USERS / ROOMS
+        // SHOW_ALL USERS / ROOMS / ACTIVE_SESSIONS / INACTIVE_SESSIONS
         // REGISTER [username]
         // LOGIN [username]
         // LOGOUT [username]
-        // SHOW ROOMS / MSG [room] / PARTICIPANTS [room] -> for user currently logged in
+        // SHOW ROOMS / MSG [room] / PARTICIPANTS [room] / EMPTY_SLOTS [room] -> for user currently logged in
         // SEND [room] [msg] -> send message
         // ADD_TO [room] [username] -> add to group
         // KICK [room] [username] -> kick from group
@@ -61,7 +62,9 @@ public class Main {
 
         // Users Login
         userService1.login();
+        sessionService.login(user1);
         userService2.login();
+        sessionService.login(user2);
 
         // Send Messages
         service.sendMessage(privateChat, user1, "Hi");
@@ -76,7 +79,9 @@ public class Main {
 
         // Users logout
         userService1.logout();
+        sessionService.logout(user1);
         userService2.logout();
+        sessionService.logout(user2);
 
         System.out.println("Private Chat History:");
         service.getChatHistory(privateChat).forEach(System.out::println);
@@ -94,7 +99,7 @@ public class Main {
         service.sendMessage(groupChat, user2, "Epic");
         service.sendMessage(groupChat, user3, "I love pancakes");
 
-        System.out.println("\nGroup Chat Members:");
+        System.out.println("\nGroup Chat Members (Alphabetically sorted):");
         service.getChatParticipants(groupChat).forEach(System.out::println);
 
         System.out.println("\nGroup Chat History:");

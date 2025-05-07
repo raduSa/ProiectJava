@@ -7,6 +7,7 @@ import java.util.Map;
 
 public class GroupChat extends ChatRoom {
     private Map<User, GroupPermission> permissions = new HashMap<>();
+    private final Integer maxUsers = 50;
 
     public GroupChat(String name, User creator) {
         super(name);
@@ -14,8 +15,8 @@ public class GroupChat extends ChatRoom {
     }
 
     @Override
-    public boolean canAdd(User user) {
-        return true;
+    public Integer emptySlots() {
+        return maxUsers - permissions.size();
     }
 
     @Override
