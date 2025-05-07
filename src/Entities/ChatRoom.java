@@ -20,11 +20,21 @@ public abstract class ChatRoom {
     }
 
     public void addParticipant(User user) {
+        if (participants.contains(user)) {
+            System.out.println("User is already part of this room!");
+            return;
+        }
         participants.add(user);
+        System.out.println("Added user " + user);
     }
 
     public void removeParticipant(User user) {
+        if (!participants.contains(user)) {
+            System.out.println("User is not part of this room!");
+            return;
+        }
         participants.remove(user);
+        System.out.println("Kicked user " + user);
     }
 
     public abstract Integer emptySlots();

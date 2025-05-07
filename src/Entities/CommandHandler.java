@@ -38,15 +38,18 @@ public class CommandHandler {
                 else if (Objects.equals(tokens[1], "INACTIVE_SESSIONS")) {
                     sessionService.showInactiveSessions();
                 }
+                else {
+                    System.out.println("Unknown command");
+                }
                 break;
             // REGISTER [username]
             case "REGISTER":
                 user = service.registerUser(tokens[1]);
-                System.out.printf("Registered user: %s", user);
                 break;
             // LOGIN [username]
             case "LOGIN":
                 user = service.getUsers().get(tokens[1]);
+                if (!checkUserExists(user)) break;
                 userService = new UserService(user);
                 userService.login();
                 sessionService.login(user);
@@ -65,9 +68,8 @@ public class CommandHandler {
                 if(!checkLoggedIn()) break;
                 if (Objects.equals(tokens[1], "ROOMS")) {
                     System.out.println("User is part of the following rooms:");
-                    final UserService finalUserService = userService;
                     service.getChatRooms().stream().filter(chatRoom -> chatRoom.getParticipants().
-                            contains(finalUserService.getUser())).forEach(System.out::println);
+                            contains(userService.getUser())).forEach(System.out::println);
                 }
                 else if (Objects.equals(tokens[1], "MSG")) {
                     System.out.printf("Messages from room %s: \n", tokens[2]);
@@ -80,43 +82,34 @@ public class CommandHandler {
                 else if (Objects.equals(tokens[1], "EMPTY_SLOTS")) {
                     service.showEmptySlots(service.getRoomByName(tokens[2]));
                 }
+                else {
+                    System.out.println("Unknown command");
+                }
                 break;
             // SEND [room] [msg]
             case "SEND":
                 if(!checkLoggedIn()) break;
-                service.sendMessage(service.getRoomByName(tokens[1]), userService.getUser(), tokens[2]);
+                room = service.getRoomByName(tokens[1]);
+                if(!checkRoomExists(room))break;
+                service.sendMessage(room, userService.getUser(), tokens[2]);
                 break;
             // ADD_TO [room] [username]
             case "ADD_TO":
                 if(!checkLoggedIn()) break;
                 room = service.getRoomByName(tokens[1]);
                 user = service.getUserByName(tokens[2]);
-                if (!(room instanceof GroupChat)) {
-                    System.out.println("Room given is not a group chat!");
-                    break;
-                }
-                if (user == null) {
-                    System.out.println("User given does not exist!");
-                    break;
-                }
+                if (!checkRoomIsGroup(room)) break;
+                if (!checkUserExists(user)) break;
                 userService.addUserToGroup((GroupChat)room, user);
-                System.out.println("Added user " + user);
                 break;
             // KICK [room] [username]
             case "KICK":
                 if(!checkLoggedIn()) break;
                 room = service.getRoomByName(tokens[1]);
                 user = service.getUserByName(tokens[2]);
-                if (!(room instanceof GroupChat)) {
-                    System.out.println("Room given is not a group chat!");
-                    break;
-                }
-                if (user == null) {
-                    System.out.println("User given does not exist!");
-                    break;
-                }
+                if (!checkRoomIsGroup(room)) break;
+                if (!checkUserExists(user)) break;
                 userService.kickUserFromGroup((GroupChat)room, user);
-                System.out.println("Kicked user " + user);
                 break;
             // CREATE GROUP [name] / PRIVATE [username]
             case "CREATE":
@@ -130,11 +123,11 @@ public class CommandHandler {
                 }
                 else if (Objects.equals(tokens[1], "PRIVATE")) {
                     User otherUser = service.getUserByName(tokens[2]);
-                    if (otherUser == null) {
-                        System.out.println("User does not exist!");
-                        break;
-                    }
+                    if(!checkUserExists(otherUser))break;
                     service.createPrivateChat(userService.getUser(), otherUser);
+                }
+                else {
+                    System.out.println("Unknown command");
                 }
                 break;
             // SEARCH [room] [keyword]
@@ -142,50 +135,35 @@ public class CommandHandler {
                 if(!checkLoggedIn()) break;
                 room = service.getRoomByName(tokens[1]);
                 String keyword = tokens[2];
-                if (room == null) {
-                    System.out.println("Room does not exist");
-                    break;
-                }
+                if(!checkRoomExists(room)) break;
                 service.searchMessages(room, keyword);
                 break;
             // MSG_STATUS [room]
             case "MSG_STATUS":
                 if(!checkLoggedIn()) break;
                 room = service.getRoomByName(tokens[1]);
-                if (room == null) {
-                    System.out.println("Room does not exist");
-                    break;
-                }
+                if(!checkRoomExists(room)) break;
                 userService.showMessageStatus(room);
                 break;
             // READ [room]
             case "READ":
                 if(!checkLoggedIn()) break;
                 room = service.getRoomByName(tokens[1]);
-                if (room == null) {
-                    System.out.println("Room does not exist");
-                    break;
-                }
+                if(!checkRoomExists(room)) break;
                 userService.simulateReading(room);
                 break;
             // UNREAD [room]
             case "UNREAD":
                 if(!checkLoggedIn()) break;
                 room = service.getRoomByName(tokens[1]);
-                if (room == null) {
-                    System.out.println("Room does not exist");
-                    break;
-                }
+                if(!checkRoomExists(room)) break;
                 userService.showUnreadMessages(room);
                 break;
             // UNREAD_CNT [room]
             case "UNREAD_CNT":
                 if(!checkLoggedIn()) break;
                 room = service.getRoomByName(tokens[1]);
-                if (room == null) {
-                    System.out.println("Room does not exist");
-                    break;
-                }
+                if(!checkRoomExists(room)) break;
                 System.out.println(userService.getUnreadMessageCount(room));
                 break;
             // ADMIN [room] [username]
@@ -193,14 +171,8 @@ public class CommandHandler {
                 if(!checkLoggedIn()) break;
                 room = service.getRoomByName(tokens[1]);
                 user = service.getUserByName(tokens[2]);
-                if (!(room instanceof GroupChat)) {
-                    System.out.println("Room given is not a group chat!");
-                    break;
-                }
-                if (user == null) {
-                    System.out.println("User given does not exist!");
-                    break;
-                }
+                if (!checkRoomIsGroup(room)) break;
+                if (!checkUserExists(user)) break;
                 userService.makeUserAdmin((GroupChat) room, user);
                 System.out.println("Made user " + user + " admin");
                 break;
@@ -209,26 +181,19 @@ public class CommandHandler {
                 if(!checkLoggedIn()) break;
                 room = service.getRoomByName(tokens[1]);
                 user = service.getUserByName(tokens[2]);
-                if (!(room instanceof GroupChat)) {
-                    System.out.println("Room given is not a group chat!");
-                    break;
-                }
-                if (user == null) {
-                    System.out.println("User given does not exist!");
-                    break;
-                }
+                if (!checkRoomIsGroup(room)) break;
+                if (!checkUserExists(user)) break;
                 userService.removeUserAdmin((GroupChat) room, user);
                 System.out.println("Removed users " + user + " admin role");
                 break;
             // ROLES [room]
             case "ROLES":
                 room = service.getRoomByName(tokens[1]);
-                if (!(room instanceof GroupChat)) {
-                    System.out.println("Room given is not a group chat!");
-                    break;
-                }
+                if (!checkRoomIsGroup(room)) break;
                 ((GroupChat) room).showPermissions();
                 break;
+            default:
+                System.out.println("Unknown command");
         }
     }
 
@@ -239,6 +204,30 @@ public class CommandHandler {
     private Boolean checkLoggedIn() {
         if (userService == null) {
             System.out.println("Not logged in!");
+            return Boolean.FALSE;
+        }
+        return Boolean.TRUE;
+    }
+    
+    private Boolean checkUserExists(User user) {
+        if (user == null) {
+            System.out.println("User given does not exist!");
+            return Boolean.FALSE;
+        }
+        return Boolean.TRUE;
+    }
+
+    private Boolean checkRoomExists(ChatRoom room) {
+        if (room == null) {
+            System.out.println("Room given does not exist!");
+            return Boolean.FALSE;
+        }
+        return Boolean.TRUE;
+    }
+    
+    private Boolean checkRoomIsGroup(ChatRoom room) {
+        if (!(room instanceof GroupChat)) {
+            System.out.println("Room given is not a group chat!");
             return Boolean.FALSE;
         }
         return Boolean.TRUE;
