@@ -37,7 +37,7 @@ public class Main {
         // ROLES [room] -> show roles of all participants in a room
 
         while (true) {
-            System.out.println("\nWhat is thy will:");
+            System.out.println("\nEnter command:");
             String input = scanner.nextLine();
 
             handler.readCommand(input);
