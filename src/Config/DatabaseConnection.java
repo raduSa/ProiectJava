@@ -19,7 +19,7 @@ public class DatabaseConnection {
             dbUrl = citireProprietati(Constants.FISIER_DB).get(0);
             username = citireProprietati(Constants.FISIER_DB).get(1);
             pass = citireProprietati(Constants.FISIER_DB).get(2);
-        } catch (RuntimeException | ClassNotFoundException e) {
+        } catch (RuntimeException | ClassNotFoundException | IOException e) {
             throw new RuntimeException(e);
         }
     }

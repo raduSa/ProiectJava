@@ -22,6 +22,9 @@ public class Message {
     public String getContent() { return content; }
     public User getSender() { return sender; }
     public LocalDateTime getTimestamp() { return timestamp; }
+    public Map<User, MessageStatus> getDeliveryStatus() {
+        return deliveryStatus;
+    }
 
     public void markRead(User user) {
         deliveryStatus.put(user, MessageStatus.READ);
