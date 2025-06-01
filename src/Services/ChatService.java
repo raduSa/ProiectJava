@@ -1,7 +1,11 @@
 package Services;
 
 import Entities.*;
+import Repository.ChatRoomJdbcService;
+import Repository.MessageJdbcService;
+import Repository.UserJdbcService;
 import Utils.GroupPermission;
+import Utils.MessageStatus;
 
 import java.util.*;
 
@@ -10,77 +14,106 @@ public class ChatService {
     private List<ChatRoom> chatRooms = new ArrayList<>();
 
     public User registerUser(String username) {
-        if (users.containsKey(username)) {
-            System.out.println("User " + username + " already exists!");
-            return users.get(username);
+        User newUser = UserJdbcService.getInstance().createUser(username);
+        if (newUser != null) {
+            System.out.printf("Registered user: %s\n", username);
         }
-        System.out.printf("Registered user: %s", username);
-        User user = new User(username);
-        users.put(username, user);
-        return user;
+        return newUser;
     }
 
     public PrivateChat createPrivateChat(User u1, User u2) {
         PrivateChat chat = new PrivateChat(u1, u2);
-        chatRooms.add(chat);
+        ChatRoomJdbcService.getInstance().createChatRoom(chat, "PRIVATE", 2);
+        System.out.println("Created private chat: " + chat.getName());
         return chat;
     }
 
     public GroupChat createGroupChat(String name, User creator) {
         GroupChat group = new GroupChat(name, creator);
         group.setPermissions(creator, GroupPermission.OWNER);
-        chatRooms.add(group);
+        ChatRoomJdbcService.getInstance().createChatRoom(group, "GROUP", 50);
+        System.out.println("Created group chat: " + name);
         return group;
     }
 
     public void sendMessage(ChatRoom room, User sender, String content) {
-        if (room.getParticipants().contains(sender)) {
+        Set<User> participants = ChatRoomJdbcService.getInstance().getParticipants(room.getId());
+        // check that the sender is part of the group
+        if (participants.stream().anyMatch(participant -> Objects.equals(participant.getUsername(), sender.getUsername()))) {
+            // create the message
             Message msg = new Message(content, sender);
-            msg.initializeStatus(room.getParticipants());
-            room.sendMessage(msg);
+            int message_id = MessageJdbcService.getInstance().createMessage(msg, room.getId());
+            // initialize and save the delivery statuses
+            msg.initializeStatus(participants);
+            MessageJdbcService.getInstance().addMessageDeliveryStatus(message_id, msg);
+
             System.out.println("Message sent");
             return;
         }
         System.out.println("User is not part of this group!");
     }
 
-    public List<Message> getChatHistory(ChatRoom room) {
-        return room.getMessages();
+    public List<Message> getChatHistory(int room_id) {
+        List<Message> messages = MessageJdbcService.getInstance().getMessagesByChatRoomId(room_id);
+        if (messages.isEmpty()) {
+            System.out.println("No messages!");
+        }
+        else {
+            messages.forEach(System.out::println);
+        }
+        return messages;
     }
 
-    public Set<User> getChatParticipants(ChatRoom room) {
-        return room.getParticipants();
+    public Set<User> getChatParticipants(int room_id) {
+        Set<User> participants = ChatRoomJdbcService.getInstance().getParticipants(room_id);
+        if (participants.isEmpty()) {
+            System.out.println("No messages!");
+        }
+        else {
+            participants.forEach(System.out::println);
+        }
+        return participants;
     }
 
     public void searchMessages(ChatRoom room, String keyword) {
-        room.getMessages().stream()
+        List<Message> messages = MessageJdbcService.getInstance().getMessagesByChatRoomId(room.getId());
+        messages.stream()
                 .filter(msg -> msg.getContent().toLowerCase().contains(keyword.toLowerCase()))
                 .forEach(System.out::println);
     }
 
-    public ChatRoom getRoomByName(String roomName) {
-        for (ChatRoom room : chatRooms) {
-            if (Objects.equals(room.getName(), roomName)) {
-                return room;
-            }
-        }
-        return null;
+    public ChatRoom getRoomById(Integer roomId) {
+        return ChatRoomJdbcService.getInstance().getChatRoomById(roomId);
     }
 
     public User getUserByName(String username) {
-        return users.getOrDefault(username, null);
+        return UserJdbcService.getInstance().getUserByUsername(username);
     }
 
-    public Map<String, User> getUsers() {
-        return users;
+    public List<User> getUsers() {
+        return UserJdbcService.getInstance().getAllUsers();
     }
 
-    public List<ChatRoom> getChatRooms() {
-        return chatRooms;
+    public void showEmptySlots(int room_id) {
+        System.out.println("Number of empty slots: " + ChatRoomJdbcService.getInstance().getChatRoomById(room_id).emptySlots());
     }
 
-    public void showEmptySlots(ChatRoom room) {
-        System.out.println("Number of empty slots: " + room.emptySlots());
+    public List<String> getChatRoomNames() {
+        return ChatRoomJdbcService.getInstance().getAllChatRooms();
+    }
+
+    public void getChatRoomsWithMember(User user) {
+        List<String> chatRooms = ChatRoomJdbcService.getInstance().getChatRoomsWithMember(user.getUsername());
+        if (chatRooms.isEmpty()) {
+            System.out.println("Not a part of any rooms!");
+        }
+        else {
+            chatRooms.forEach(System.out::println);
+        }
+    }
+
+    public void showRoomPermissions(ChatRoom room) {
+
     }
 }
 

@@ -2,6 +2,7 @@ package Services;
 
 import Entities.User;
 import Entities.UserSession;
+import Repository.UserSessionJdbcService;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,20 +15,16 @@ public class SessionService {
 
     public void login(User user) {
         UserSession session = new UserSession(user);
-        activeSessions.put(user.getUsername(), session);
+        UserSessionJdbcService.getInstance().createUserSession(session);
     }
 
     public void logout(User user) {
         String username = user.getUsername();
-        UserSession session = activeSessions.get(username);
-        if (session != null) {
-            session.logout();
-            activeSessions.remove(username);
-            inactiveSessions.computeIfAbsent(username, k -> new ArrayList<>()).add(session);
-        }
+        UserSessionJdbcService.getInstance().endUserSession(username);
     }
 
     public void showActiveSessions() {
+        Map<String, UserSession> activeSessions = UserSessionJdbcService.getInstance().getActiveSessions();
         if (activeSessions.isEmpty()) {
             System.out.println("No active sessions");
             return;
@@ -37,6 +34,7 @@ public class SessionService {
     }
 
     public void showInactiveSessions() {
+        Map<String, List<UserSession>> inactiveSessions = UserSessionJdbcService.getInstance().getInactiveSessions();
         if (inactiveSessions.isEmpty()) {
             System.out.println("No inactive sessions");
             return;

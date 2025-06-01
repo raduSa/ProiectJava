@@ -10,7 +10,8 @@ public class Main {
     public static SessionService sessionService = new SessionService();
 
     public static void main(String[] args) {
-        initialise();
+        // TODO: switch this back
+        // initialise();
 
         Scanner scanner = new Scanner(System.in);
         CommandHandler handler = new CommandHandler(service, sessionService);
@@ -22,7 +23,7 @@ public class Main {
         // REGISTER [username]
         // LOGIN [username]
         // LOGOUT [username]
-        // SHOW ROOMS / MSG [room] / PARTICIPANTS [room] / EMPTY_SLOTS [room] -> for user currently logged in
+        // SHOW ROOMS / MSG [room_id] / PARTICIPANTS [room_id] / EMPTY_SLOTS [room_id] -> for user currently logged in
         // SEND [room] [msg] -> send message
         // ADD_TO [room] [username] -> add to group
         // KICK [room] [username] -> kick from group
@@ -45,67 +46,67 @@ public class Main {
         }
     }
 
-    private static void initialise() {
-
-
-        User user1 = service.registerUser("user1");
-        User user2 = service.registerUser("user2");
-        User user3 = service.registerUser("user3");
-
-
-        // Private chat
-
-        PrivateChat privateChat = service.createPrivateChat(user1, user2);
-
-        UserService userService1 = new UserService(user1);
-        UserService userService2 = new UserService(user2);
-
-        // Users Login
-        userService1.login();
-        sessionService.login(user1);
-        userService2.login();
-        sessionService.login(user2);
-
-        // Send Messages
-        service.sendMessage(privateChat, user1, "Hi");
-        service.sendMessage(privateChat, user2, "Hey");
-
-        // Simulate user1 reading messages
-        userService1.simulateReading(privateChat);
-
-        // Show statuses
-        userService1.showMessageStatus(privateChat);
-        userService2.showMessageStatus(privateChat);
-
-        // Users logout
-        userService1.logout();
-        sessionService.logout(user1);
-        userService2.logout();
-        sessionService.logout(user2);
-
-        System.out.println("Private Chat History:");
-        service.getChatHistory(privateChat).forEach(System.out::println);
-
-
-        // Group chat
-
-        GroupChat groupChat = service.createGroupChat("Group", user1);
-        userService1.addUserToGroup(groupChat, user2);
-        userService1.addUserToGroup(groupChat, user3);
-
-        service.sendMessage(groupChat, user3, "Hello everyone!");
-        service.sendMessage(groupChat, user2, "Hey there");
-        service.sendMessage(groupChat, user1, "Whats up");
-        service.sendMessage(groupChat, user2, "Epic");
-        service.sendMessage(groupChat, user3, "I love pancakes");
-
-        System.out.println("\nGroup Chat Members (Alphabetically sorted):");
-        service.getChatParticipants(groupChat).forEach(System.out::println);
-
-        System.out.println("\nGroup Chat History:");
-        service.getChatHistory(groupChat).forEach(System.out::println);
-
-        System.out.println("\nSearch for 'hello' in Group Chat:");
-        service.searchMessages(groupChat, "hello");
-    }
+//    private static void initialise() {
+//
+//
+//        User user1 = service.registerUser("user1");
+//        User user2 = service.registerUser("user2");
+//        User user3 = service.registerUser("user3");
+//
+//
+//        // Private chat
+//
+//        PrivateChat privateChat = service.createPrivateChat(user1, user2);
+//
+//        UserService userService1 = new UserService(user1);
+//        UserService userService2 = new UserService(user2);
+//
+//        // Users Login
+//        userService1.login();
+//        sessionService.login(user1);
+//        userService2.login();
+//        sessionService.login(user2);
+//
+//        // Send Messages
+//        service.sendMessage(privateChat, user1, "Hi");
+//        service.sendMessage(privateChat, user2, "Hey");
+//
+//        // Simulate user1 reading messages
+//        userService1.simulateReading(privateChat);
+//
+//        // Show statuses
+//        userService1.showMessageStatus(privateChat);
+//        userService2.showMessageStatus(privateChat);
+//
+//        // Users logout
+//        userService1.logout();
+//        sessionService.logout(user1);
+//        userService2.logout();
+//        sessionService.logout(user2);
+//
+//        System.out.println("Private Chat History:");
+//        // service.getChatHistory(privateChat).forEach(System.out::println);
+//
+//
+//        // Group chat
+//
+//        GroupChat groupChat = service.createGroupChat("Group", user1);
+//        userService1.addUserToGroup(groupChat, user2);
+//        userService1.addUserToGroup(groupChat, user3);
+//
+//        service.sendMessage(groupChat, user3, "Hello everyone!");
+//        service.sendMessage(groupChat, user2, "Hey there");
+//        service.sendMessage(groupChat, user1, "Whats up");
+//        service.sendMessage(groupChat, user2, "Epic");
+//        service.sendMessage(groupChat, user3, "I love pancakes");
+//
+//        System.out.println("\nGroup Chat Members (Alphabetically sorted):");
+//        service.getChatParticipants(groupChat).forEach(System.out::println);
+//
+//        System.out.println("\nGroup Chat History:");
+//        // service.getChatHistory(groupChat).forEach(System.out::println);
+//
+//        System.out.println("\nSearch for 'hello' in Group Chat:");
+//        service.searchMessages(groupChat, "hello");
+//    }
 }

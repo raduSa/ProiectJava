@@ -60,10 +60,7 @@ public class MessageJdbcService {
                 try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
                         messageId = generatedKeys.getInt(1);
-                        
-                        // Save delivery status for all recipients
-                        saveMessageDeliveryStatus(messageId, message);
-                        
+
                         auditService.log("CREATE_MESSAGE");
                     }
                 }
@@ -81,7 +78,7 @@ public class MessageJdbcService {
      * @param messageId The ID of the message
      * @param message The message object with delivery status information
      */
-    private void saveMessageDeliveryStatus(int messageId, Message message) {
+    public void addMessageDeliveryStatus(int messageId, Message message) {
         String sql = "INSERT INTO " + Constants.MESSAGE_DELIVERY_TABLE + 
                      " (message_id, username, status) VALUES (?, ?, ?)";
         
@@ -90,10 +87,10 @@ public class MessageJdbcService {
             PreparedStatement stmt = conn.prepareStatement(sql);
             
             // For each user in the delivery status map
-            for (User user : message.getDeliveryStatus().keySet()) {
+            for (String username : message.getDeliveryStatus().keySet()) {
                 stmt.setInt(1, messageId);
-                stmt.setString(2, user.getUsername());
-                stmt.setString(3, message.getStatus(user).toString());
+                stmt.setString(2, username);
+                stmt.setString(3, message.getStatus(username).toString());
                 stmt.addBatch();
             }
             
@@ -129,16 +126,7 @@ public class MessageJdbcService {
                         sender = new User(senderUsername); // Fallback if user not found
                     }
                     
-                    Message message = new Message(content, sender);
-                    
-                    // Set timestamp using reflection since it's private and final
-                    try {
-                        java.lang.reflect.Field timestampField = Message.class.getDeclaredField("timestamp");
-                        timestampField.setAccessible(true);
-                        timestampField.set(message, timestamp);
-                    } catch (Exception e) {
-                        System.err.println("Error setting message timestamp: " + e.getMessage());
-                    }
+                    Message message = new Message(content, sender, timestamp, messageId);
                     
                     // Load delivery status
                     loadMessageDeliveryStatus(messageId, message);
@@ -181,20 +169,8 @@ public class MessageJdbcService {
                     }
                     
                     MessageStatus status = MessageStatus.valueOf(statusStr);
-                    
-                    // Mark the message with the appropriate status
-                    if (status == MessageStatus.READ) {
-                        message.markRead(user);
-                    } else {
-                        // For SENT and RECEIVED, we need to use reflection since there's no direct method
-                        try {
-                            java.lang.reflect.Field deliveryStatusField = Message.class.getDeclaredField("deliveryStatus");
-                            deliveryStatusField.setAccessible(true);
-                            ((java.util.Map<User, MessageStatus>)deliveryStatusField.get(message)).put(user, status);
-                        } catch (Exception e) {
-                            System.err.println("Error setting message status: " + e.getMessage());
-                        }
-                    }
+
+                    message.markStatus(user, status);
                 }
             }
             

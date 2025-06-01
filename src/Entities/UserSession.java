@@ -5,17 +5,24 @@ import Utils.UserSessionUtils;
 import java.time.LocalDateTime;
 
 public class UserSession {
-    private Integer sessionId = 1;
+    private Integer sessionId;
     private User user;
     private LocalDateTime loginTime;
     private LocalDateTime logoutTime;
     private String ipAddress;
 
     public UserSession(User user) {
-        this.sessionId = ++UserSessionUtils.sessionId;
         this.user = user;
         this.loginTime = LocalDateTime.now();
         this.ipAddress = UserSessionUtils.generateRandomIP();
+    }
+
+    public UserSession(User user, Integer sessionId, LocalDateTime loginTime, LocalDateTime logoutTime, String ipAddress) {
+        this.sessionId = sessionId;
+        this.user = user;
+        this.loginTime = loginTime;
+        this.logoutTime = logoutTime;
+        this.ipAddress = ipAddress;
     }
 
     public Integer getSessionId() {

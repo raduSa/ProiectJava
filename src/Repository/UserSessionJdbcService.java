@@ -9,7 +9,9 @@ import Services.AuditService;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Singleton service that handles CRUD operations for UserSession entities
@@ -99,7 +101,8 @@ public class UserSessionJdbcService {
             
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    return mapResultSetToUserSession(rs);
+                    //return mapResultSetToUserSession(rs);
+                    return null;
                 }
             }
             
@@ -129,10 +132,10 @@ public class UserSessionJdbcService {
             
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    UserSession session = mapResultSetToUserSession(rs);
-                    if (session != null) {
-                        sessions.add(session);
-                    }
+//                    UserSession session = mapResultSetToUserSession(rs);
+//                    if (session != null) {
+//                        sessions.add(session);
+//                    }
                 }
             }
             
@@ -149,9 +152,9 @@ public class UserSessionJdbcService {
      * Get all active user sessions
      * @return List of active user sessions
      */
-    public List<UserSession> getActiveSessions() {
+    public Map<String, UserSession> getActiveSessions() {
         String sql = "SELECT * FROM " + Constants.USER_SESSION_TABLE + " WHERE logout_time IS NULL";
-        List<UserSession> sessions = new ArrayList<>();
+        Map<String, UserSession> sessionsByUser = new HashMap<>();
         
         try {
             Connection conn = DatabaseConnection.getDatabaseConnection();
@@ -159,10 +162,18 @@ public class UserSessionJdbcService {
             ResultSet rs = stmt.executeQuery(sql);
             
             while (rs.next()) {
-                UserSession session = mapResultSetToUserSession(rs);
-                if (session != null) {
-                    sessions.add(session);
-                }
+                String username = rs.getString("username");
+                User user = userService.getUserByUsername(username);
+
+                Timestamp logoutTimestamp = rs.getTimestamp("logout_time");
+                LocalDateTime logoutTime = logoutTimestamp != null ? logoutTimestamp.toLocalDateTime() : null;
+
+                UserSession session = new UserSession(user,
+                                                    rs.getInt("session_id"),
+                                                    rs.getTimestamp("login_time").toLocalDateTime(),
+                                                    logoutTime,
+                                                    rs.getString("ip_address"));
+                sessionsByUser.put(username, session);
             }
             
             auditService.log("READ_ACTIVE_SESSIONS");
@@ -171,58 +182,48 @@ public class UserSessionJdbcService {
             System.err.println("Error retrieving active sessions: " + e.getMessage());
         }
         
-        return sessions;
+        return sessionsByUser;
     }
-    
+
     /**
-     * Map a ResultSet to a UserSession object
-     * @param rs The ResultSet
-     * @return The mapped UserSession, or null if mapping failed
+     * Get all inactive user sessions (sessions with a logout timestamp) grouped by username
+     * @return Map of usernames to lists of their inactive user sessions
      */
-    private UserSession mapResultSetToUserSession(ResultSet rs) throws SQLException {
-        String username = rs.getString("username");
-        LocalDateTime loginTime = rs.getTimestamp("login_time").toLocalDateTime();
-        Timestamp logoutTimestamp = rs.getTimestamp("logout_time");
-        LocalDateTime logoutTime = logoutTimestamp != null ? logoutTimestamp.toLocalDateTime() : null;
-        String ipAddress = rs.getString("ip_address");
-        int sessionId = rs.getInt("session_id");
-        
-        User user = userService.getUserByUsername(username);
-        if (user == null) {
-            user = new User(username); // Fallback if user not found
-        }
-        
-        // Create a UserSession using reflection to set private fields
+    public Map<String, List<UserSession>> getInactiveSessions() {
+        String sql = "SELECT * FROM " + Constants.USER_SESSION_TABLE + " WHERE logout_time IS NOT NULL";
+        Map<String, List<UserSession>> sessionsByUser = new HashMap<>();
+
         try {
-            UserSession session = new UserSession(user);
-            
-            // Set session ID
-            java.lang.reflect.Field sessionIdField = UserSession.class.getDeclaredField("sessionId");
-            sessionIdField.setAccessible(true);
-            sessionIdField.set(session, sessionId);
-            
-            // Set login time
-            java.lang.reflect.Field loginTimeField = UserSession.class.getDeclaredField("loginTime");
-            loginTimeField.setAccessible(true);
-            loginTimeField.set(session, loginTime);
-            
-            // Set IP address
-            java.lang.reflect.Field ipAddressField = UserSession.class.getDeclaredField("ipAddress");
-            ipAddressField.setAccessible(true);
-            ipAddressField.set(session, ipAddress);
-            
-            // Set logout time if exists
-            if (logoutTime != null) {
-                java.lang.reflect.Field logoutTimeField = UserSession.class.getDeclaredField("logoutTime");
-                logoutTimeField.setAccessible(true);
-                logoutTimeField.set(session, logoutTime);
+            Connection conn = DatabaseConnection.getDatabaseConnection();
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+
+            while (rs.next()) {
+                String username = rs.getString("username");
+                User user = userService.getUserByUsername(username);
+
+                Timestamp logoutTimestamp = rs.getTimestamp("logout_time");
+                LocalDateTime logoutTime = logoutTimestamp != null ? logoutTimestamp.toLocalDateTime() : null;
+
+                UserSession session = new UserSession(user,
+                        rs.getInt("session_id"),
+                        rs.getTimestamp("login_time").toLocalDateTime(),
+                        logoutTime,
+                        rs.getString("ip_address"));
+
+                // Get the list for this username or create a new one if it doesn't exist
+                List<UserSession> userSessions = sessionsByUser.getOrDefault(username, new ArrayList<>());
+                userSessions.add(session);
+                sessionsByUser.put(username, userSessions);
             }
-            
-            return session;
-        } catch (Exception e) {
-            System.err.println("Error mapping ResultSet to UserSession: " + e.getMessage());
-            return null;
+
+            auditService.log("READ_INACTIVE_SESSIONS");
+
+        } catch (SQLException e) {
+            System.err.println("Error retrieving inactive sessions: " + e.getMessage());
         }
+
+        return sessionsByUser;
     }
     
     /**
@@ -230,16 +231,16 @@ public class UserSessionJdbcService {
      * @param sessionId The ID of the session to end
      * @return True if successful
      */
-    public boolean endUserSession(int sessionId) {
+    public boolean endUserSession(String username) {
         String sql = "UPDATE " + Constants.USER_SESSION_TABLE + 
-                     " SET logout_time = ? WHERE session_id = ? AND logout_time IS NULL";
+                     " SET logout_time = ? WHERE username = ? AND logout_time IS NULL";
         
         try {
             Connection conn = DatabaseConnection.getDatabaseConnection();
             PreparedStatement stmt = conn.prepareStatement(sql);
             
             stmt.setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()));
-            stmt.setInt(2, sessionId);
+            stmt.setString(2, username);
             
             int affectedRows = stmt.executeUpdate();
             auditService.log("END_USER_SESSION");

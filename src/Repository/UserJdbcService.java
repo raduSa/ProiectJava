@@ -30,26 +30,34 @@ public class UserJdbcService {
     
     /**
      * Create a new user in the database
-     * @param user The user to create
+     * @param username The username to use
      * @return True if the operation was successful
      */
-    public boolean createUser(User user) {
+    public User createUser(String username) {
         String sql = "INSERT INTO " + Constants.USER_TABLE + " (username, status) VALUES (?, ?)";
+
+        // First check if user already exists
+        if (getUserByUsername(username) != null) {
+            System.out.println("User " + username + " already exists!");
+            return null;
+        }
+
+        User newUser = new User(username);
         
         try {
             Connection conn = DatabaseConnection.getDatabaseConnection();
             PreparedStatement stmt = conn.prepareStatement(sql);
             
-            stmt.setString(1, user.getUsername());
-            stmt.setString(2, user.getStatus().toString());
+            stmt.setString(1, newUser.getUsername());
+            stmt.setString(2, newUser.getStatus().toString());
             
             int affectedRows = stmt.executeUpdate();
             auditService.log("CREATE_USER");
-            return affectedRows > 0;
-            
+
+            return newUser;
         } catch (SQLException e) {
             System.err.println("Error creating user: " + e.getMessage());
-            return false;
+            return null;
         }
     }
     

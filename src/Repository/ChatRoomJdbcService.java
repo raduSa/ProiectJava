@@ -52,12 +52,8 @@ public class ChatRoomJdbcService {
             
             stmt.setString(1, chatRoom.getName());
             stmt.setString(2, roomType);
-            if (maxUsers != null) {
-                stmt.setInt(3, maxUsers);
-            } else {
-                stmt.setNull(3, java.sql.Types.INTEGER);
-            }
-            
+            stmt.setInt(3, maxUsers);
+
             int affectedRows = stmt.executeUpdate();
             
             if (affectedRows > 0) {
@@ -67,8 +63,7 @@ public class ChatRoomJdbcService {
                         
                         // Add participants
                         for (User participant : chatRoom.getParticipants()) {
-                            addParticipant(chatRoomId, participant.getUsername(), 
-                                           roomType.equals("GROUP") ? "MEMBER" : null);
+                            addParticipant(chatRoomId, participant.getUsername(), GroupPermission.OWNER);
                         }
                         
                         auditService.log("CREATE_CHATROOM");
@@ -87,10 +82,9 @@ public class ChatRoomJdbcService {
      * Add a participant to a chat room
      * @param chatRoomId The ID of the chat room
      * @param username The username of the participant
-     * @param permission The permission level (for group chats)
      * @return True if successful
      */
-    public boolean addParticipant(int chatRoomId, String username, String permission) {
+    public boolean addParticipant(int chatRoomId, String username, GroupPermission permission) {
         String sql = "INSERT INTO " + Constants.PARTICIPANTS_TABLE + 
                      " (chatroom_id, username, permission) VALUES (?, ?, ?)";
         
@@ -100,7 +94,7 @@ public class ChatRoomJdbcService {
             
             stmt.setInt(1, chatRoomId);
             stmt.setString(2, username);
-            stmt.setString(3, permission);
+            stmt.setString(3, permission.toString());
             
             int affectedRows = stmt.executeUpdate();
             auditService.log("ADD_PARTICIPANT");
@@ -140,39 +134,33 @@ public class ChatRoomJdbcService {
                         // Create a group chat
                         User creator = null;
                         for (User user : participants) {
-                            if (getParticipantPermission(chatRoomId, user.getUsername()).equals("OWNER")) {
+                            if (getParticipantPermission(chatRoomId, user.getUsername()) == GroupPermission.OWNER) {
                                 creator = user;
                                 break;
                             }
                         }
-                        
-                        if (creator == null && !participants.isEmpty()) {
-                            creator = participants.iterator().next();
+
+                        if (creator == null) {
+                            creator = new User("UNKNOWN");
                         }
-                        
-                        chatRoom = new GroupChat(name, creator != null ? creator : new User("Unknown"));
+
+                        chatRoom = new GroupChat(name, creator, chatRoomId);
                         
                         // Add all participants
                         for (User participant : participants) {
-                            if (!participant.equals(creator)) {
+                            if (participant != creator) {
                                 ((GroupChat) chatRoom).addParticipant(participant);
                                 
                                 // Set permissions
-                                String permission = getParticipantPermission(chatRoomId, participant.getUsername());
+                                GroupPermission permission = getParticipantPermission(chatRoomId, participant.getUsername());
                                 if (permission != null) {
-                                    ((GroupChat) chatRoom).setPermissions(participant, GroupPermission.valueOf(permission));
+                                    ((GroupChat) chatRoom).setPermissions(participant, permission);
                                 }
                             }
                         }
                     } else {
-                        // Create a private chat with the two participants
-                        if (participants.size() >= 2) {
-                            User[] users = participants.toArray(new User[0]);
-                            chatRoom = new PrivateChat(users[0], users[1]);
-                        } else {
-                            // Default handling for incomplete data
-                            chatRoom = null;
-                        }
+                        User[] users = participants.toArray(new User[0]);
+                        chatRoom = new PrivateChat(users[0], users[1], chatRoomId);
                     }
                     
                     auditService.log("READ_CHATROOM");
@@ -193,7 +181,7 @@ public class ChatRoomJdbcService {
      * @param username The username of the participant
      * @return The permission string, or null if not found
      */
-    private String getParticipantPermission(int chatRoomId, String username) {
+    public GroupPermission getParticipantPermission(int chatRoomId, String username) {
         String sql = "SELECT permission FROM " + Constants.PARTICIPANTS_TABLE + 
                      " WHERE chatroom_id = ? AND username = ?";
         
@@ -206,7 +194,7 @@ public class ChatRoomJdbcService {
             
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    return rs.getString("permission");
+                    return GroupPermission.valueOf(rs.getString("permission"));
                 }
             }
             
@@ -218,11 +206,40 @@ public class ChatRoomJdbcService {
     }
     
     /**
+     * Update the permission of a participant in a chat room
+     * @param chatRoomId The ID of the chat room
+     * @param username The username of the participant
+     * @param permission The new permission to set
+     * @return True if successful, false otherwise
+     */
+    public boolean updateParticipantPermission(int chatRoomId, String username, GroupPermission permission) {
+        String sql = "UPDATE " + Constants.PARTICIPANTS_TABLE + 
+                     " SET permission = ? WHERE chatroom_id = ? AND username = ?";
+        
+        try {
+            Connection conn = DatabaseConnection.getDatabaseConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            
+            stmt.setString(1, permission.toString());
+            stmt.setInt(2, chatRoomId);
+            stmt.setString(3, username);
+            
+            int affectedRows = stmt.executeUpdate();
+            auditService.log("UPDATE_PARTICIPANT_PERMISSION");
+            return affectedRows > 0;
+            
+        } catch (SQLException e) {
+            System.err.println("Error updating participant permission: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    /**
      * Get all participants of a chat room
      * @param chatRoomId The ID of the chat room
      * @return Set of participants
      */
-    private Set<User> getParticipants(int chatRoomId) {
+    public Set<User> getParticipants(int chatRoomId) {
         String sql = "SELECT username FROM " + Constants.PARTICIPANTS_TABLE + 
                      " WHERE chatroom_id = ?";
         Set<User> participants = new TreeSet<>();
@@ -252,11 +269,11 @@ public class ChatRoomJdbcService {
     
     /**
      * Get all chat rooms
-     * @return List of all chat rooms
+     * @return List of all chat rooms names
      */
-    public List<ChatRoom> getAllChatRooms() {
-        String sql = "SELECT id FROM " + Constants.CHATROOM_TABLE;
-        List<ChatRoom> chatRooms = new ArrayList<>();
+    public List<String> getAllChatRooms() {
+        String sql = "SELECT name FROM " + Constants.CHATROOM_TABLE;
+        List<String> chatRooms = new ArrayList<>();
         
         try {
             Connection conn = DatabaseConnection.getDatabaseConnection();
@@ -264,11 +281,8 @@ public class ChatRoomJdbcService {
             ResultSet rs = stmt.executeQuery(sql);
             
             while (rs.next()) {
-                int chatRoomId = rs.getInt("id");
-                ChatRoom chatRoom = getChatRoomById(chatRoomId);
-                if (chatRoom != null) {
-                    chatRooms.add(chatRoom);
-                }
+                String chatRoomName = rs.getString("name");
+                chatRooms.add(chatRoomName);
             }
             
             auditService.log("READ_ALL_CHATROOMS");
@@ -277,6 +291,38 @@ public class ChatRoomJdbcService {
             System.err.println("Error retrieving all chat rooms: " + e.getMessage());
         }
         
+        return chatRooms;
+    }
+
+    /**
+     * Get all chat rooms
+     * @return List of all chat rooms names
+     */
+    public List<String> getChatRoomsWithMember(String username) {
+        String sql = "SELECT name, chatroom_id FROM " + Constants.CHATROOM_TABLE + " r JOIN "
+                    + Constants.PARTICIPANTS_TABLE + " p ON (r.id = p.chatroom_id) "
+                    + "WHERE p.username = ?";
+        List<String> chatRooms = new ArrayList<>();
+
+        try {
+            Connection conn = DatabaseConnection.getDatabaseConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, username);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    String chatRoomName = rs.getString("name");
+                    int chatRoomid = rs.getInt("chatroom_id");
+                    chatRooms.add(chatRoomid + ". " + chatRoomName);
+                }
+            }
+
+            auditService.log("READ_CHATROOMS_WITH_MEMBER");
+
+        } catch (SQLException e) {
+            System.err.println("Error retrieving chat rooms for user " + username + ": " + e.getMessage());
+        }
+
         return chatRooms;
     }
     

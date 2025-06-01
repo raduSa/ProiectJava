@@ -4,6 +4,10 @@ import Entities.ChatRoom;
 import Entities.GroupChat;
 import Entities.Message;
 import Entities.User;
+import Repository.ChatRoomJdbcService;
+import Repository.GroupChatJdbcService;
+import Repository.MessageJdbcService;
+import Repository.UserJdbcService;
 import Utils.GroupPermission;
 import Utils.MessageStatus;
 import Utils.UserStatus;
@@ -19,18 +23,20 @@ public class UserService {
 
     public void login() {
         user.setStatus(UserStatus.ONLINE);
+        UserJdbcService.getInstance().updateUser(user);
         System.out.println(user.getUsername() + " logged in.");
     }
 
     public void logout() {
         user.setStatus(UserStatus.OFFLINE);
+        UserJdbcService.getInstance().updateUser(user);
         System.out.println(user.getUsername() + " logged out.");
     }
 
     public void simulateReading(ChatRoom room) {
-        for (Message msg : room.getMessages()) {
-            if (!msg.getSender().equals(user)) {
-                msg.markRead(user);
+        for (Message msg : MessageJdbcService.getInstance().getMessagesByChatRoomId(room.getId())) {
+            if (!msg.getSender().getUsername().equals(user.getUsername())) {
+                MessageJdbcService.getInstance().updateMessageStatus(msg.getId(), user.getUsername(), MessageStatus.READ);
             }
         }
         System.out.println(user.getUsername() + " read all messages in " + room.getName());
@@ -38,17 +44,19 @@ public class UserService {
 
     public void showMessageStatus(ChatRoom room) {
         System.out.println("Message Status for " + user.getUsername() + " in chat " + room.getName() + ":");
-        for (Message msg : room.getMessages()) {
-            System.out.println(msg + " [Status: " + msg.getStatus(user) + "]");
+        for (Message msg : MessageJdbcService.getInstance().getMessagesByChatRoomId(room.getId())) {
+            if (msg.getStatus(user.getUsername()) != null) {
+                System.out.println(msg + " [Status: " + msg.getStatus(user.getUsername()) + "]");
+            }
         }
     }
 
     public void showUnreadMessages(ChatRoom room) {
         System.out.println("Unread messages for " + user.getUsername() + " in chat " + room.getName() + ":");
-        List<Message> messages = room.getMessages();
+        List<Message> messages = MessageJdbcService.getInstance().getMessagesByChatRoomId(room.getId());
         boolean hasUnread = false;
         for (Message msg : messages) {
-            if (!msg.getSender().equals(user) && msg.getStatus(user) != MessageStatus.READ) {
+            if (msg.getStatus(user.getUsername()) == MessageStatus.RECEIVED) {
                 System.out.println(msg);
                 hasUnread = true;
             }
@@ -59,9 +67,11 @@ public class UserService {
     }
 
     public int getUnreadMessageCount(ChatRoom room) {
+        System.out.println("Number of unread messages for " + user.getUsername() + " in chat " + room.getName() + ":");
+        List<Message> messages = MessageJdbcService.getInstance().getMessagesByChatRoomId(room.getId());
         int count = 0;
-        for (Message msg : room.getMessages()) {
-            if (!msg.getSender().equals(user) && msg.getStatus(user) != MessageStatus.READ) {
+        for (Message msg : messages) {
+            if (msg.getStatus(user.getUsername()) == MessageStatus.RECEIVED) {
                 count++;
             }
         }
@@ -69,39 +79,44 @@ public class UserService {
     }
 
     public void addUserToGroup(GroupChat group, User otherUser) {
-        if (group.getPermission(user) == GroupPermission.MEMBER) {
+        if (ChatRoomJdbcService.getInstance().getParticipantPermission(group.getId(), user.getUsername()) == GroupPermission.MEMBER) {
             System.out.println("Only the owner and admins can add new members!");
             return;
         }
         group.addParticipant(otherUser);
+        ChatRoomJdbcService.getInstance().addParticipant(group.getId(), otherUser.getUsername(), GroupPermission.MEMBER);
+        System.out.println("Added new member " + otherUser);
     }
 
     public void kickUserFromGroup(GroupChat group, User otherUser) {
-        if (group.getPermission(user) == GroupPermission.MEMBER) {
-            System.out.println("Only the owner and admins can kick users!");
+        if (ChatRoomJdbcService.getInstance().getParticipantPermission(group.getId(), user.getUsername()) == GroupPermission.MEMBER) {
+            System.out.println("Only the owner and admins can kick members!");
             return;
         }
-        if (group.getPermission(otherUser) == GroupPermission.OWNER) {
+        if (ChatRoomJdbcService.getInstance().getParticipantPermission(group.getId(), otherUser.getUsername()) == GroupPermission.OWNER) {
             System.out.println("Cannot kick the owner!");
             return;
         }
         group.removeParticipant(otherUser);
+        ChatRoomJdbcService.getInstance().removeParticipant(group.getId(), otherUser.getUsername());
     }
 
     public void makeUserAdmin(GroupChat group, User otherUser) {
-        if (group.getPermission(user) != GroupPermission.OWNER) {
+        if (ChatRoomJdbcService.getInstance().getParticipantPermission(group.getId(), user.getUsername()) != GroupPermission.OWNER) {
             System.out.println("Only the owner can make users admins!");
             return;
         }
-        group.setPermissions(otherUser, GroupPermission.ADMIN);
+        ChatRoomJdbcService.getInstance().updateParticipantPermission(group.getId(), otherUser.getUsername(), GroupPermission.ADMIN);
+        System.out.println("Made user " + otherUser + " an admin");
     }
 
     public void removeUserAdmin(GroupChat group, User otherUser) {
-        if (group.getPermission(user) != GroupPermission.OWNER) {
+        if (ChatRoomJdbcService.getInstance().getParticipantPermission(group.getId(), user.getUsername()) != GroupPermission.OWNER) {
             System.out.println("Only the owner can take away roles!");
             return;
         }
-        group.setPermissions(otherUser, GroupPermission.MEMBER);
+        ChatRoomJdbcService.getInstance().updateParticipantPermission(group.getId(), otherUser.getUsername(), GroupPermission.MEMBER);
+        System.out.println("Removed user's " + user + " admin role");
     }
 
     public void showUserStatus(User user) {

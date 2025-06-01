@@ -6,13 +6,21 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class GroupChat extends ChatRoom {
-    private Map<User, GroupPermission> permissions = new HashMap<>();
+    private Map<String, GroupPermission> permissions = new HashMap<>();
     private final Integer maxUsers = 50;
 
     public GroupChat(String name, User creator) {
         super(name);
         addParticipant(creator);
+        setPermissions(creator, GroupPermission.OWNER);
     }
+
+    public GroupChat(String name, User creator, int roomId) {
+        super(name, roomId);
+        addParticipant(creator);
+        setPermissions(creator, GroupPermission.OWNER);
+    }
+
 
     @Override
     public Integer emptySlots() {
@@ -22,11 +30,11 @@ public class GroupChat extends ChatRoom {
     @Override
     public void addParticipant(User user) {
         super.addParticipant(user);
-        permissions.put(user, GroupPermission.MEMBER);
+        permissions.put(user.getUsername(), GroupPermission.MEMBER);
     }
 
     public void setPermissions(User user, GroupPermission permission) {
-        permissions.put(user, permission);
+        permissions.put(user.getUsername(), permission);
     }
 
     public GroupPermission getPermission(User user) {

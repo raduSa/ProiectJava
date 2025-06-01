@@ -3,12 +3,18 @@ package Entities;
 import java.util.*;
 
 public abstract class ChatRoom {
+    protected int roomId;
     protected String name;
     protected List<Message> messages = new ArrayList<>();
     protected Set<User> participants = new TreeSet<>();
 
     public ChatRoom(String name) {
         this.name = name;
+    }
+
+    public ChatRoom(String name, int roomId) {
+        this.name = name;
+        this.roomId = roomId;
     }
 
     public String getName() { return name; }
@@ -25,7 +31,6 @@ public abstract class ChatRoom {
             return;
         }
         participants.add(user);
-        System.out.println("Added user " + user);
     }
 
     public void removeParticipant(User user) {
@@ -42,5 +47,9 @@ public abstract class ChatRoom {
     @Override
     public String toString() {
         return name;
+    }
+
+    public int getId() {
+        return roomId;
     }
 }

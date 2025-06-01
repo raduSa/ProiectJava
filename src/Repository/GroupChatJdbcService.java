@@ -189,24 +189,24 @@ public class GroupChatJdbcService {
         return success;
     }
     
-    /**
-     * Add a participant to a group chat
-     * @param groupChatId The ID of the group chat
-     * @param username The username of the participant to add
-     * @return True if successful
-     */
-    public boolean addParticipant(int groupChatId, String username) {
-        User user = userService.getUserByUsername(username);
-        if (user == null) {
-            return false;
-        }
-        
-        boolean success = chatRoomService.addParticipant(groupChatId, username, GroupPermission.MEMBER.toString());
-        if (success) {
-            auditService.log("ADD_GROUP_CHAT_PARTICIPANT");
-        }
-        return success;
-    }
+//    /**
+//     * Add a participant to a group chat
+//     * @param groupChatId The ID of the group chat
+//     * @param username The username of the participant to add
+//     * @return True if successful
+//     */
+//    public boolean addParticipant(int groupChatId, String username) {
+//        User user = userService.getUserByUsername(username);
+//        if (user == null) {
+//            return false;
+//        }
+//
+//        boolean success = chatRoomService.addParticipant(groupChatId, username, GroupPermission.MEMBER.toString());
+//        if (success) {
+//            auditService.log("ADD_GROUP_CHAT_PARTICIPANT");
+//        }
+//        return success;
+//    }
     
     /**
      * Remove a participant from a group chat
