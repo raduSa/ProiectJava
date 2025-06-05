@@ -10,13 +10,9 @@ public class Main {
     public static SessionService sessionService = new SessionService();
 
     public static void main(String[] args) {
-        // TODO: switch this back
-        // initialise();
 
         Scanner scanner = new Scanner(System.in);
         CommandHandler handler = new CommandHandler(service, sessionService);
-
-        // can add a Command class to handle command
 
         // COMMANDS:
         // SHOW_ALL USERS / ROOMS / ACTIVE_SESSIONS / INACTIVE_SESSIONS

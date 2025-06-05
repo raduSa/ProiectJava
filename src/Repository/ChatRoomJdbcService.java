@@ -15,16 +15,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-/**
- * Singleton service that handles CRUD operations for ChatRoom entities
- */
 public class ChatRoomJdbcService {
     private static ChatRoomJdbcService instance;
-    private final AuditService auditService;
     private final UserJdbcService userService;
     
     private ChatRoomJdbcService() {
-        auditService = AuditService.getInstance();
         userService = UserJdbcService.getInstance();
     }
     
@@ -80,6 +75,7 @@ public class ChatRoomJdbcService {
      * Add a participant to a chat room
      * @param chatRoomId The ID of the chat room
      * @param username The username of the participant
+     * @param permission The permission of the participant
      * @return True if successful
      */
     public boolean addParticipant(int chatRoomId, String username, GroupPermission permission) {
@@ -289,7 +285,8 @@ public class ChatRoomJdbcService {
 
     /**
      * Get all chat rooms
-     * @return List of all chat rooms names
+     * @param username Username to search after
+     * @return List of all chat rooms names that contain the user
      */
     public List<String> getChatRoomsWithMember(String username) {
         String sql = "SELECT name, chatroom_id FROM " + Constants.CHATROOM_TABLE + " r JOIN "

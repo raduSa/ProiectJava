@@ -10,15 +10,10 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Singleton service that handles CRUD operations for User entities
- */
 public class UserJdbcService {
     private static UserJdbcService instance;
-    private final AuditService auditService;
     
     private UserJdbcService() {
-        auditService = AuditService.getInstance();
     }
     
     public static UserJdbcService getInstance() {

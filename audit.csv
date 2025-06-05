@@ -1140,3 +1140,42 @@ SEND (room: 11, user: user2, message: Whats up),2025-06-05 15:06:51
 SEARCH (room: 11, keyword: up, user: user2),2025-06-05 15:06:59
 MSG_STATUS (room: 11, user: user2),2025-06-05 15:07:11
 ROLES (room: 11, requestedBy: user2),2025-06-05 15:07:36
+SHOW_ALL (type: USERS),2025-06-05 16:47:06
+SHOW_ALL (type: ROOMS),2025-06-05 16:47:10
+SHOW_ALL (type: ACTIVE_SESSIONS),2025-06-05 16:47:17
+SHOW_ALL (type: INACTIVE_SESSIONS),2025-06-05 16:47:23
+REGISTER (username: user4),2025-06-05 16:47:33
+LOGIN (username: user2),2025-06-05 16:47:52
+LOGOUT (user: user2),2025-06-05 16:47:54
+LOGIN (username: user1),2025-06-05 16:48:10
+SHOW (type: ROOMS, user: user1),2025-06-05 16:48:14
+SHOW (type: MSG, details: 8, user: user1),2025-06-05 16:48:19
+SHOW (type: PARTICIPANTS, details: 8, user: user1),2025-06-05 16:48:25
+SHOW (type: EMPTY_SLOTS, details: 8, user: user1),2025-06-05 16:48:31
+SEND (room: 8, user: user1, message: Testing),2025-06-05 16:48:42
+SHOW (type: MSG, details: 8, user: user1),2025-06-05 16:48:45
+ADD_TO (room: 8, userToAdd: user4, byUser: user1),2025-06-05 16:48:52
+KICK (room: 8, userToKick: user4, byUser: user1),2025-06-05 16:49:00
+CREATE (type: PRIVATE, name/user: user4, createdBy: user1),2025-06-05 16:49:07
+SEARCH (room: 8, keyword: HeE, user: user1),2025-06-05 16:49:20
+SEARCH (room: 8, keyword: HE, user: user1),2025-06-05 16:49:24
+MSG_STATUS (room: 8, user: user1),2025-06-05 16:49:34
+READ (room: 8, user: user1),2025-06-05 16:49:43
+LOGOUT (user: user1),2025-06-05 16:49:45
+LOGIN (username: user2),2025-06-05 16:49:51
+MSG_STATUS (room: 8, user: user2),2025-06-05 16:49:56
+READ (room: 8, user: user2),2025-06-05 16:50:02
+MSG_STATUS (room: 8, user: user2),2025-06-05 16:50:07
+UNREAD (room: 8, user: user2),2025-06-05 16:50:13
+UNREAD_CNT (room: 8, user: user2),2025-06-05 16:50:21
+ADMIN (room: 8, userToMakeAdmin: user4, byUser: user2),2025-06-05 16:50:30
+LOGOUT (user: user2),2025-06-05 16:50:35
+LOGIN (username: user1),2025-06-05 16:50:37
+LOGIN (username: user1),2025-06-05 16:52:21
+ADD_TO (room: 8, userToAdd: user4, byUser: user1),2025-06-05 16:52:34
+ADMIN (room: 8, userToMakeAdmin: user4, byUser: user1),2025-06-05 16:52:39
+REM_ADMIN (room: 8, userToRemoveAdmin: user4, byUser: user1),2025-06-05 16:52:46
+ROLES (room: 8, requestedBy: user1),2025-06-05 16:52:52
+CREATE (type: GROUP, name/user: test3, createdBy: user1),2025-06-05 16:53:03
+SHOW (type: ROOMS, user: user1),2025-06-05 16:53:12
+DELETE (type: GROUP, target: 13, user: user1),2025-06-05 16:53:16

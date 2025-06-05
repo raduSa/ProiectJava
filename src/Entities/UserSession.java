@@ -43,4 +43,8 @@ public class UserSession {
                 " from " + ipAddress + " started at " + loginTime +
                 (logoutTime != null ? ", ended at " + logoutTime : ", active");
     }
+
+    public String getIpAddress() {
+        return ipAddress;
+    }
 }

@@ -13,16 +13,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Singleton service that handles CRUD operations for UserSession entities
- */
 public class UserSessionJdbcService {
     private static UserSessionJdbcService instance;
-    private final AuditService auditService;
     private final UserJdbcService userService;
     
     private UserSessionJdbcService() {
-        auditService = AuditService.getInstance();
         userService = UserJdbcService.getInstance();
     }
     
@@ -49,7 +44,7 @@ public class UserSessionJdbcService {
             
             stmt.setString(1, session.getUser().getUsername());
             stmt.setTimestamp(2, Timestamp.valueOf(session.getLoginTime()));
-            stmt.setString(3, getSessionIpAddress(session));
+            stmt.setString(3, session.getIpAddress());
             
             int affectedRows = stmt.executeUpdate();
             
@@ -69,83 +64,8 @@ public class UserSessionJdbcService {
     }
     
     /**
-     * Get the IP address from a UserSession using reflection
-     * @param session The user session
-     * @return The IP address
-     */
-    private String getSessionIpAddress(UserSession session) {
-        try {
-            java.lang.reflect.Field ipAddressField = UserSession.class.getDeclaredField("ipAddress");
-            ipAddressField.setAccessible(true);
-            return (String) ipAddressField.get(session);
-        } catch (Exception e) {
-            System.err.println("Error getting IP address: " + e.getMessage());
-            return "0.0.0.0"; // Default fallback
-        }
-    }
-    
-    /**
-     * Get a user session by its ID
-     * @param sessionId The ID of the session
-     * @return The UserSession if found, null otherwise
-     */
-    public UserSession getUserSessionById(int sessionId) {
-        String sql = "SELECT * FROM " + Constants.USER_SESSION_TABLE + " WHERE session_id = ?";
-        
-        try {
-            Connection conn = DatabaseConnection.getDatabaseConnection();
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            
-            stmt.setInt(1, sessionId);
-            
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    //return mapResultSetToUserSession(rs);
-                    return null;
-                }
-            }
-
-        } catch (SQLException e) {
-            System.err.println("Error retrieving user session: " + e.getMessage());
-        }
-        
-        return null;
-    }
-    
-    /**
-     * Get all user sessions for a user
-     * @param username The username
-     * @return List of user sessions
-     */
-    public List<UserSession> getUserSessionsByUsername(String username) {
-        String sql = "SELECT * FROM " + Constants.USER_SESSION_TABLE + " WHERE username = ?";
-        List<UserSession> sessions = new ArrayList<>();
-        
-        try {
-            Connection conn = DatabaseConnection.getDatabaseConnection();
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            
-            stmt.setString(1, username);
-            
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-//                    UserSession session = mapResultSetToUserSession(rs);
-//                    if (session != null) {
-//                        sessions.add(session);
-//                    }
-                }
-            }
-
-        } catch (SQLException e) {
-            System.err.println("Error retrieving user sessions: " + e.getMessage());
-        }
-        
-        return sessions;
-    }
-    
-    /**
      * Get all active user sessions
-     * @return List of active user sessions
+     * @return Map of active user sessions
      */
     public Map<String, UserSession> getActiveSessions() {
         String sql = "SELECT * FROM " + Constants.USER_SESSION_TABLE + " WHERE logout_time IS NULL";

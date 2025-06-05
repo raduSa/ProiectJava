@@ -7,13 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FilesUtils {
-    
-    /**
-     * Reads properties from a file and returns them as a list of strings
-     * @param fileName The name of the file to read from
-     * @return List of strings, one for each line in the file
-     * @throws IOException If an I/O error occurs
-     */
+
     public static List<String> citireProprietati(String fileName) throws IOException {
         List<String> properties = new ArrayList<>();
         

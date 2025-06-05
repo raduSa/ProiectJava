@@ -14,16 +14,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Singleton service that handles CRUD operations for Message entities
- */
 public class MessageJdbcService {
     private static MessageJdbcService instance;
-    private final AuditService auditService;
     private final UserJdbcService userService;
     
     private MessageJdbcService() {
-        auditService = AuditService.getInstance();
         userService = UserJdbcService.getInstance();
     }
     
