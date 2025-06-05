@@ -10,8 +10,6 @@ import java.util.List;
 import java.util.Map;
 
 public class SessionService {
-    private Map<String, List<UserSession>> inactiveSessions = new HashMap<>();
-    private Map<String, UserSession> activeSessions = new HashMap<>();
 
     public void login(User user) {
         UserSession session = new UserSession(user);

@@ -10,8 +10,6 @@ import Utils.MessageStatus;
 import java.util.*;
 
 public class ChatService {
-    private Map<String, User> users = new HashMap<>();
-    private List<ChatRoom> chatRooms = new ArrayList<>();
 
     public User registerUser(String username) {
         User newUser = UserJdbcService.getInstance().createUser(username);
@@ -110,10 +108,6 @@ public class ChatService {
         else {
             chatRooms.forEach(System.out::println);
         }
-    }
-
-    public void showRoomPermissions(ChatRoom room) {
-
     }
 }
 

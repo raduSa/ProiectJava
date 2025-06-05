@@ -228,7 +228,6 @@ public class UserSessionJdbcService {
     
     /**
      * End a user session (set logout time)
-     * @param sessionId The ID of the session to end
      * @return True if successful
      */
     public boolean endUserSession(String username) {
@@ -249,54 +248,6 @@ public class UserSessionJdbcService {
         } catch (SQLException e) {
             System.err.println("Error ending user session: " + e.getMessage());
             return false;
-        }
-    }
-    
-    /**
-     * Delete a user session
-     * @param sessionId The ID of the session to delete
-     * @return True if successful
-     */
-    public boolean deleteUserSession(int sessionId) {
-        String sql = "DELETE FROM " + Constants.USER_SESSION_TABLE + " WHERE session_id = ?";
-        
-        try {
-            Connection conn = DatabaseConnection.getDatabaseConnection();
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            
-            stmt.setInt(1, sessionId);
-            
-            int affectedRows = stmt.executeUpdate();
-            auditService.log("DELETE_USER_SESSION");
-            return affectedRows > 0;
-            
-        } catch (SQLException e) {
-            System.err.println("Error deleting user session: " + e.getMessage());
-            return false;
-        }
-    }
-    
-    /**
-     * Delete all user sessions for a user
-     * @param username The username
-     * @return The number of sessions deleted
-     */
-    public int deleteAllUserSessions(String username) {
-        String sql = "DELETE FROM " + Constants.USER_SESSION_TABLE + " WHERE username = ?";
-        
-        try {
-            Connection conn = DatabaseConnection.getDatabaseConnection();
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            
-            stmt.setString(1, username);
-            
-            int affectedRows = stmt.executeUpdate();
-            auditService.log("DELETE_ALL_USER_SESSIONS");
-            return affectedRows;
-            
-        } catch (SQLException e) {
-            System.err.println("Error deleting user sessions: " + e.getMessage());
-            return 0;
         }
     }
 }

@@ -327,32 +327,6 @@ public class ChatRoomJdbcService {
     }
     
     /**
-     * Update a chat room's name
-     * @param chatRoomId The ID of the chat room
-     * @param newName The new name for the chat room
-     * @return True if successful
-     */
-    public boolean updateChatRoomName(int chatRoomId, String newName) {
-        String sql = "UPDATE " + Constants.CHATROOM_TABLE + " SET name = ? WHERE id = ?";
-        
-        try {
-            Connection conn = DatabaseConnection.getDatabaseConnection();
-            PreparedStatement stmt = conn.prepareStatement(sql);
-            
-            stmt.setString(1, newName);
-            stmt.setInt(2, chatRoomId);
-            
-            int affectedRows = stmt.executeUpdate();
-            auditService.log("UPDATE_CHATROOM");
-            return affectedRows > 0;
-            
-        } catch (SQLException e) {
-            System.err.println("Error updating chat room: " + e.getMessage());
-            return false;
-        }
-    }
-    
-    /**
      * Delete a chat room
      * @param chatRoomId The ID of the chat room to delete
      * @return True if successful

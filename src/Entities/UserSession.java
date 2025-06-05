@@ -37,14 +37,6 @@ public class UserSession {
         return loginTime;
     }
 
-    public void logout() {
-        this.logoutTime = LocalDateTime.now();
-    }
-
-    public boolean isActive() {
-        return logoutTime == null;
-    }
-
     @Override
     public String toString() {
         return "Session-" + sessionId + " for " + user.getUsername() +

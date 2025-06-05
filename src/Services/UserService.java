@@ -5,7 +5,6 @@ import Entities.GroupChat;
 import Entities.Message;
 import Entities.User;
 import Repository.ChatRoomJdbcService;
-import Repository.GroupChatJdbcService;
 import Repository.MessageJdbcService;
 import Repository.UserJdbcService;
 import Utils.GroupPermission;
@@ -117,10 +116,6 @@ public class UserService {
         }
         ChatRoomJdbcService.getInstance().updateParticipantPermission(group.getId(), otherUser.getUsername(), GroupPermission.MEMBER);
         System.out.println("Removed user's " + user + " admin role");
-    }
-
-    public void showUserStatus(User user) {
-        System.out.println("User " + user.getUsername() + " is currently " + user.getStatus());
     }
 
     public User getUser() {

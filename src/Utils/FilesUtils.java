@@ -6,9 +6,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Utility class for file operations
- */
 public class FilesUtils {
     
     /**
