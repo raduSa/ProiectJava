@@ -39,7 +39,10 @@ public class SessionService {
             System.out.println("No inactive sessions");
             return;
         }
-        inactiveSessions.forEach((key, value) ->
-                System.out.println("User: " + key + ", " + value));
+        inactiveSessions.forEach((key, value) -> {
+                    System.out.println("User: " + key + ": ");
+                    value.forEach(System.out::println);
+                }
+                );
     }
 }
