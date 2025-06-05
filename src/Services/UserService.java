@@ -12,6 +12,7 @@ import Utils.MessageStatus;
 import Utils.UserStatus;
 
 import java.util.List;
+import java.util.Objects;
 
 public class UserService {
     private User user;
@@ -116,6 +117,20 @@ public class UserService {
         }
         ChatRoomJdbcService.getInstance().updateParticipantPermission(group.getId(), otherUser.getUsername(), GroupPermission.MEMBER);
         System.out.println("Removed user's " + user + " admin role");
+    }
+
+    public void updateMessageContent(int messageId, String newContent) {
+        Message message = MessageJdbcService.getInstance().getMessageById(messageId);
+        if (message == null) {
+            System.out.println("Message with given id does not exist!");
+            return;
+        }
+        if (!Objects.equals(user.getUsername(), message.getSender().getUsername())) {
+            System.out.println("Only the sender may change this message!");
+            return;
+        }
+        MessageJdbcService.getInstance().updateMessageContent(messageId, newContent);
+        System.out.println("Message content updated");
     }
 
     public User getUser() {

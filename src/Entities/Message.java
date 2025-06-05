@@ -55,7 +55,7 @@ public class Message {
 
     @Override
     public String toString() {
-        return "[" + timestamp + "] " + sender.getUsername() + ": " + content;
+        return messageId + ". " + "[" + timestamp + "] " + sender.getUsername() + ": " + content;
     }
 
     public int getId() {

@@ -192,6 +192,9 @@ public class CommandHandler {
                 if (!checkRoomIsGroup(room)) break;
                 ((GroupChat)room).showPermissions();
                 break;
+            case "EDIT":
+                userService.updateMessageContent(Integer.parseInt(tokens[1]), tokens[2]);
+                break;
             default:
                 System.out.println("Unknown command");
         }
