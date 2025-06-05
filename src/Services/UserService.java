@@ -133,6 +133,16 @@ public class UserService {
         System.out.println("Message content updated");
     }
 
+    public void deleteGroup(int roomId) {
+        GroupPermission permission = ChatRoomJdbcService.getInstance().getParticipantPermission(roomId, user.getUsername());
+        if (permission != GroupPermission.OWNER) {
+            System.out.println("Only the owner can delete the room!");
+            return;
+        }
+        ChatRoomJdbcService.getInstance().deleteChatRoom(roomId);
+        System.out.println("Deleted room with id " + roomId);
+    }
+
     public User getUser() {
         return user;
     }

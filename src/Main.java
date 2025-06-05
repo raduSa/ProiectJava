@@ -37,6 +37,7 @@ public class Main {
         // REM_ADMIN [room_id] [username] -> remove admin role from user
         // ROLES [room_id] -> show roles of all participants in a room
         // EDIT [message_id] -> edit the content of a message
+        // DELETE GROUP [room_id] / MSG [message_id]
 
         while (true) {
             System.out.println("\nEnter command:");

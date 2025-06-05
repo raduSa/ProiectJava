@@ -193,7 +193,22 @@ public class CommandHandler {
                 ((GroupChat)room).showPermissions();
                 break;
             case "EDIT":
+                if (!checkLoggedIn()) break;
                 userService.updateMessageContent(Integer.parseInt(tokens[1]), tokens[2]);
+                break;
+            case "DELETE":
+                if (!checkLoggedIn()) break;
+                if (Objects.equals(tokens[1], "MSG")) {
+                    userService.updateMessageContent(Integer.parseInt(tokens[2]), "DELETED");
+                }
+                else if (Objects.equals(tokens[1], "GROUP")) {
+                    room = chatService.getRoomById(Integer.parseInt(tokens[2]));
+                    if(!checkRoomExists(room)) break;
+                    userService.deleteGroup(Integer.parseInt(tokens[2]));
+                }
+                else {
+                    System.out.println("Unknown command");
+                }
                 break;
             default:
                 System.out.println("Unknown command");
