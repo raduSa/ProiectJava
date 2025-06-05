@@ -42,18 +42,6 @@ public abstract class AbstractCrudService<T, ID> implements CrudService<T, ID> {
     }
 
     @Override
-    public List<T> readAll() throws SQLException {
-        List<T> list = new ArrayList<>();
-        try (PreparedStatement ps = connection.prepareStatement(getSelectAllSQL())) {
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                list.add(mapResultSet(rs));
-            }
-        }
-        return list;
-    }
-
-    @Override
     public T update(ID id, T entity) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(getUpdateSQL())) {
             fillUpdateStatement(ps, entity);

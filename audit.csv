@@ -1124,3 +1124,19 @@ READ_USER,2025-06-05 14:28:05
 READ_USER,2025-06-05 14:28:05
 READ_MESSAGE,2025-06-05 14:28:05
 READ_CHATROOM_MESSAGES,2025-06-05 14:28:05
+
+SHOW_ALL (type: USERS),2025-06-05 15:04:26
+LOGIN (username: user1),2025-06-05 15:04:31
+LOGOUT (user: user1),2025-06-05 15:04:34
+LOGIN (username: user2),2025-06-05 15:04:51
+CREATE (type: GROUP, name/user: group2 , createdBy: user2),2025-06-05 15:04:58
+SHOW (type: ROOMS, user: user2),2025-06-05 15:05:04
+ADD_TO (room: group2, userToAdd: user1, byUser: user2),2025-06-05 15:05:11
+LOGIN (username: user2),2025-06-05 15:06:22
+SHOW (type: ROOMS, user: user2),2025-06-05 15:06:26
+ADD_TO (room: 11, userToAdd: user1, byUser: user2),2025-06-05 15:06:30
+ADMIN (room: 11, userToMakeAdmin: user1, byUser: user2),2025-06-05 15:06:38
+SEND (room: 11, user: user2, message: Whats up),2025-06-05 15:06:51
+SEARCH (room: 11, keyword: up, user: user2),2025-06-05 15:06:59
+MSG_STATUS (room: 11, user: user2),2025-06-05 15:07:11
+ROLES (room: 11, requestedBy: user2),2025-06-05 15:07:36

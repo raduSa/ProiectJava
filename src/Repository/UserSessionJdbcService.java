@@ -57,7 +57,6 @@ public class UserSessionJdbcService {
                 try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
                         sessionId = generatedKeys.getInt(1);
-                        auditService.log("CREATE_USER_SESSION");
                     }
                 }
             }
@@ -105,9 +104,7 @@ public class UserSessionJdbcService {
                     return null;
                 }
             }
-            
-            auditService.log("READ_USER_SESSION");
-            
+
         } catch (SQLException e) {
             System.err.println("Error retrieving user session: " + e.getMessage());
         }
@@ -138,9 +135,7 @@ public class UserSessionJdbcService {
 //                    }
                 }
             }
-            
-            auditService.log("READ_USER_SESSIONS_BY_USERNAME");
-            
+
         } catch (SQLException e) {
             System.err.println("Error retrieving user sessions: " + e.getMessage());
         }
@@ -175,9 +170,7 @@ public class UserSessionJdbcService {
                                                     rs.getString("ip_address"));
                 sessionsByUser.put(username, session);
             }
-            
-            auditService.log("READ_ACTIVE_SESSIONS");
-            
+
         } catch (SQLException e) {
             System.err.println("Error retrieving active sessions: " + e.getMessage());
         }
@@ -217,8 +210,6 @@ public class UserSessionJdbcService {
                 sessionsByUser.put(username, userSessions);
             }
 
-            auditService.log("READ_INACTIVE_SESSIONS");
-
         } catch (SQLException e) {
             System.err.println("Error retrieving inactive sessions: " + e.getMessage());
         }
@@ -242,7 +233,6 @@ public class UserSessionJdbcService {
             stmt.setString(2, username);
             
             int affectedRows = stmt.executeUpdate();
-            auditService.log("END_USER_SESSION");
             return affectedRows > 0;
             
         } catch (SQLException e) {

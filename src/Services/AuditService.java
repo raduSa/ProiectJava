@@ -27,13 +27,18 @@ public class AuditService {
     }
     
     /**
-     * Logs an action to the audit CSV file
-     * @param actionName The name of the action performed (e.g., "CREATE_USER")
+     * Logs a command and its description to the audit CSV file.
+     * @param command The command executed (e.g., "REGISTER", "LOGIN").
+     * @param description A description of the command's parameters or context (e.g., "user: john_doe").
      */
-    public void log(String actionName) {
+    public void log(String command, String description) {
         try (PrintWriter writer = new PrintWriter(new FileWriter(Constants.AUDIT_FILE, true))) {
             String timestamp = LocalDateTime.now().format(formatter);
-            writer.println(actionName + "," + timestamp);
+            String logEntry = command;
+            if (description != null && !description.isEmpty()) {
+                logEntry += " (" + description + ")";
+            }
+            writer.println(logEntry + "," + timestamp);
         } catch (IOException e) {
             System.err.println("Error writing to audit file: " + e.getMessage());
             e.printStackTrace();

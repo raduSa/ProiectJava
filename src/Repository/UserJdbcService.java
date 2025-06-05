@@ -52,8 +52,6 @@ public class UserJdbcService {
             stmt.setString(2, newUser.getStatus().toString());
             
             int affectedRows = stmt.executeUpdate();
-            auditService.log("CREATE_USER");
-
             return newUser;
         } catch (SQLException e) {
             System.err.println("Error creating user: " + e.getMessage());
@@ -79,7 +77,6 @@ public class UserJdbcService {
                 if (rs.next()) {
                     User user = new User(rs.getString("username"));
                     user.setStatus(UserStatus.valueOf(rs.getString("status")));
-                    auditService.log("READ_USER");
                     return user;
                 }
             }
@@ -109,9 +106,7 @@ public class UserJdbcService {
                 user.setStatus(UserStatus.valueOf(rs.getString("status")));
                 users.add(user);
             }
-            
-            auditService.log("READ_ALL_USERS");
-            
+
         } catch (SQLException e) {
             System.err.println("Error retrieving all users: " + e.getMessage());
         }
@@ -135,7 +130,6 @@ public class UserJdbcService {
             stmt.setString(2, user.getUsername());
             
             int affectedRows = stmt.executeUpdate();
-            auditService.log("UPDATE_USER");
             return affectedRows > 0;
             
         } catch (SQLException e) {
@@ -159,7 +153,6 @@ public class UserJdbcService {
             stmt.setString(1, username);
             
             int affectedRows = stmt.executeUpdate();
-            auditService.log("DELETE_USER");
             return affectedRows > 0;
             
         } catch (SQLException e) {

@@ -65,8 +65,6 @@ public class ChatRoomJdbcService {
                         for (User participant : chatRoom.getParticipants()) {
                             addParticipant(chatRoomId, participant.getUsername(), GroupPermission.OWNER);
                         }
-                        
-                        auditService.log("CREATE_CHATROOM");
                     }
                 }
             }
@@ -97,7 +95,6 @@ public class ChatRoomJdbcService {
             stmt.setString(3, permission.toString());
             
             int affectedRows = stmt.executeUpdate();
-            auditService.log("ADD_PARTICIPANT");
             return affectedRows > 0;
             
         } catch (SQLException e) {
@@ -162,8 +159,7 @@ public class ChatRoomJdbcService {
                         User[] users = participants.toArray(new User[0]);
                         chatRoom = new PrivateChat(users[0], users[1], chatRoomId);
                     }
-                    
-                    auditService.log("READ_CHATROOM");
+
                     return chatRoom;
                 }
             }
@@ -225,7 +221,6 @@ public class ChatRoomJdbcService {
             stmt.setString(3, username);
             
             int affectedRows = stmt.executeUpdate();
-            auditService.log("UPDATE_PARTICIPANT_PERMISSION");
             return affectedRows > 0;
             
         } catch (SQLException e) {
@@ -284,9 +279,7 @@ public class ChatRoomJdbcService {
                 String chatRoomName = rs.getString("name");
                 chatRooms.add(chatRoomName);
             }
-            
-            auditService.log("READ_ALL_CHATROOMS");
-            
+
         } catch (SQLException e) {
             System.err.println("Error retrieving all chat rooms: " + e.getMessage());
         }
@@ -317,8 +310,6 @@ public class ChatRoomJdbcService {
                 }
             }
 
-            auditService.log("READ_CHATROOMS_WITH_MEMBER");
-
         } catch (SQLException e) {
             System.err.println("Error retrieving chat rooms for user " + username + ": " + e.getMessage());
         }
@@ -341,7 +332,6 @@ public class ChatRoomJdbcService {
             stmt.setInt(1, chatRoomId);
             
             int affectedRows = stmt.executeUpdate();
-            auditService.log("DELETE_CHATROOM");
             return affectedRows > 0;
             
         } catch (SQLException e) {
@@ -368,7 +358,6 @@ public class ChatRoomJdbcService {
             stmt.setString(2, username);
             
             int affectedRows = stmt.executeUpdate();
-            auditService.log("REMOVE_PARTICIPANT");
             return affectedRows > 0;
             
         } catch (SQLException e) {

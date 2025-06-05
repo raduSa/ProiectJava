@@ -1,6 +1,7 @@
 package Entities;
 
 import Repository.ChatRoomJdbcService;
+import Services.AuditService; // Added import
 import Services.ChatService;
 import Services.SessionService;
 import Services.UserService;
@@ -15,10 +16,12 @@ public class CommandHandler {
     ChatService chatService;
     SessionService sessionService;
     UserService userService = null;
+    private final AuditService auditService; // Added AuditService field
 
     public CommandHandler(ChatService chatService, SessionService sessionService) {
         this.chatService = chatService;
         this.sessionService = sessionService;
+        this.auditService = AuditService.getInstance(); // Initialize AuditService
     }
 
     public void handleCommand() {
@@ -28,6 +31,8 @@ public class CommandHandler {
         switch(tokens[0]) {
             // SHOW_ALL USERS / ROOMS / ACTIVE_SESSIONS / INACTIVE_SESSIONS
             case "SHOW_ALL":
+                String showAllType = tokens.length > 1 ? tokens[1] : "UNKNOWN";
+                auditService.log("SHOW_ALL", "type: " + showAllType);
                 if (Objects.equals(tokens[1], "USERS")) {
                     chatService.getUsers().forEach(System.out::println);
                 }
@@ -46,10 +51,12 @@ public class CommandHandler {
                 break;
             // REGISTER [username]
             case "REGISTER":
+                auditService.log("REGISTER", "username: " + tokens[1]);
                 user = chatService.registerUser(tokens[1]);
                 break;
             // LOGIN [username]
             case "LOGIN":
+                auditService.log("LOGIN", "username: " + tokens[1]);
                 user = chatService.getUserByName(tokens[1]);
                 if (!checkUserExists(user)) break;
                 userService = new UserService(user);
@@ -60,6 +67,7 @@ public class CommandHandler {
             // LOGOUT
             case "LOGOUT":
                 if(!checkLoggedIn()) break;
+                auditService.log("LOGOUT", "user: " + (userService != null && userService.getUser() != null ? userService.getUser().getUsername() : "N/A"));
                 userService.logout();
                 sessionService.logout(userService.getUser());
                 userService = null;
@@ -68,6 +76,9 @@ public class CommandHandler {
             // SHOW ROOMS / MSG [room] / PARTICIPANTS [room]
             case "SHOW":
                 if(!checkLoggedIn()) break;
+                String showType = tokens.length > 1 ? tokens[1] : "UNKNOWN";
+                String showDetails = tokens.length > 2 ? ", details: " + tokens[2] : "";
+                auditService.log("SHOW", "type: " + showType + showDetails + ", user: " + userService.getUser().getUsername());
                 if (Objects.equals(tokens[1], "ROOMS")) {
                     System.out.println("User is part of the following rooms:");
                     chatService.getChatRoomsWithMember(userService.getUser());
@@ -90,6 +101,7 @@ public class CommandHandler {
             // SEND [room] [msg]
             case "SEND":
                 if(!checkLoggedIn()) break;
+                auditService.log("SEND", "room: " + tokens[1] + ", user: " + userService.getUser().getUsername() + ", message: " + tokens[2]);
                 room = chatService.getRoomById(Integer.parseInt(tokens[1]));
                 if(!checkRoomExists(room)) break;
                 chatService.sendMessage(room, userService.getUser(), tokens[2]);
@@ -97,6 +109,7 @@ public class CommandHandler {
             // ADD_TO [room] [username]
             case "ADD_TO":
                 if(!checkLoggedIn()) break;
+                auditService.log("ADD_TO", "room: " + tokens[1] + ", userToAdd: " + tokens[2] + ", byUser: " + userService.getUser().getUsername());
                 room = chatService.getRoomById(Integer.parseInt(tokens[1]));
                 user = chatService.getUserByName(tokens[2]);
                 if (!checkRoomIsGroup(room)) break;
@@ -106,6 +119,7 @@ public class CommandHandler {
             // KICK [room] [username]
             case "KICK":
                 if(!checkLoggedIn()) break;
+                auditService.log("KICK", "room: " + tokens[1] + ", userToKick: " + tokens[2] + ", byUser: " + userService.getUser().getUsername());
                 room = chatService.getRoomById(Integer.parseInt(tokens[1]));
                 user = chatService.getUserByName(tokens[2]);
                 if (!checkRoomIsGroup(room)) break;
@@ -115,9 +129,14 @@ public class CommandHandler {
             // CREATE GROUP [name] / PRIVATE [username]
             case "CREATE":
                 if(!checkLoggedIn()) break;
+                String createType = tokens.length > 1 ? tokens[1] : "UNKNOWN";
+                String createDetails = tokens.length > 2 ? ", name/user: " + tokens[2] : "";
+                auditService.log("CREATE", "type: " + createType + createDetails + ", createdBy: " + userService.getUser().getUsername());
                 if (Objects.equals(tokens[1], "GROUP")) {
                     List<String> groups = ChatRoomJdbcService.getInstance().getChatRoomsWithMember(userService.getUser().getUsername());
-                    if (groups.contains(tokens[1])) {
+                    // Note: groups.contains(tokens[1]) might be a bug if tokens[1] is "GROUP" and not the group name tokens[2]
+                    // Assuming the intent was to check tokens[2] (group name)
+                    if (groups.contains(tokens[2])) { 
                         System.out.println("User is already part of a group with this name!");
                         break;
                     }
@@ -135,6 +154,7 @@ public class CommandHandler {
             // SEARCH [room] [keyword]
             case "SEARCH":
                 if(!checkLoggedIn()) break;
+                auditService.log("SEARCH", "room: " + tokens[1] + ", keyword: " + tokens[2] + ", user: " + userService.getUser().getUsername());
                 room = chatService.getRoomById(Integer.parseInt(tokens[1]));
                 String keyword = tokens[2];
                 if(!checkRoomExists(room)) break;
@@ -143,6 +163,7 @@ public class CommandHandler {
             // MSG_STATUS [room]
             case "MSG_STATUS":
                 if(!checkLoggedIn()) break;
+                auditService.log("MSG_STATUS", "room: " + tokens[1] + ", user: " + userService.getUser().getUsername());
                 room = chatService.getRoomById(Integer.parseInt(tokens[1]));
                 if(!checkRoomExists(room)) break;
                 userService.showMessageStatus(room);
@@ -150,6 +171,7 @@ public class CommandHandler {
             // READ [room]
             case "READ":
                 if(!checkLoggedIn()) break;
+                auditService.log("READ", "room: " + tokens[1] + ", user: " + userService.getUser().getUsername());
                 room = chatService.getRoomById(Integer.parseInt(tokens[1]));
                 if(!checkRoomExists(room)) break;
                 userService.simulateReading(room);
@@ -157,6 +179,7 @@ public class CommandHandler {
             // UNREAD [room]
             case "UNREAD":
                 if(!checkLoggedIn()) break;
+                auditService.log("UNREAD", "room: " + tokens[1] + ", user: " + userService.getUser().getUsername());
                 room = chatService.getRoomById(Integer.parseInt(tokens[1]));
                 if(!checkRoomExists(room)) break;
                 userService.showUnreadMessages(room);
@@ -164,6 +187,7 @@ public class CommandHandler {
             // UNREAD_CNT [room]
             case "UNREAD_CNT":
                 if(!checkLoggedIn()) break;
+                auditService.log("UNREAD_CNT", "room: " + tokens[1] + ", user: " + userService.getUser().getUsername());
                 room = chatService.getRoomById(Integer.parseInt(tokens[1]));
                 if(!checkRoomExists(room)) break;
                 System.out.println(userService.getUnreadMessageCount(room));
@@ -171,6 +195,7 @@ public class CommandHandler {
             // ADMIN [room] [username]
             case "ADMIN":
                 if(!checkLoggedIn()) break;
+                auditService.log("ADMIN", "room: " + tokens[1] + ", userToMakeAdmin: " + tokens[2] + ", byUser: " + userService.getUser().getUsername());
                 room = chatService.getRoomById(Integer.parseInt(tokens[1]));
                 user = chatService.getUserByName(tokens[2]);
                 if (!checkRoomIsGroup(room)) break;
@@ -180,6 +205,7 @@ public class CommandHandler {
             // REM_ADMIN [room] [username]
             case "REM_ADMIN":
                 if(!checkLoggedIn()) break;
+                auditService.log("REM_ADMIN", "room: " + tokens[1] + ", userToRemoveAdmin: " + tokens[2] + ", byUser: " + userService.getUser().getUsername());
                 room = chatService.getRoomById(Integer.parseInt(tokens[1]));
                 user = chatService.getUserByName(tokens[2]);
                 if (!checkRoomIsGroup(room)) break;
@@ -188,16 +214,24 @@ public class CommandHandler {
                 break;
             // ROLES [room]
             case "ROLES":
+                auditService.log("ROLES", "room: " + tokens[1] + (userService != null && userService.getUser() != null ? ", requestedBy: " + userService.getUser().getUsername() : ""));
                 room = chatService.getRoomById(Integer.parseInt(tokens[1]));
                 if (!checkRoomIsGroup(room)) break;
                 ((GroupChat)room).showPermissions();
                 break;
             case "EDIT":
                 if (!checkLoggedIn()) break;
+                auditService.log("EDIT", "messageId: " + tokens[1] + ", newContent: " + tokens[2] + ", user: " + userService.getUser().getUsername());
                 userService.updateMessageContent(Integer.parseInt(tokens[1]), tokens[2]);
                 break;
             case "DELETE":
                 if (!checkLoggedIn()) break;
+                String deleteType = tokens.length > 1 ? tokens[1] : "UNKNOWN";
+                String deleteDetails = "";
+                if (tokens.length > 2) {
+                    deleteDetails = ", target: " + tokens[2];
+                }
+                auditService.log("DELETE", "type: " + deleteType + deleteDetails + ", user: " + userService.getUser().getUsername());
                 if (Objects.equals(tokens[1], "MSG")) {
                     userService.updateMessageContent(Integer.parseInt(tokens[2]), "DELETED");
                 }
@@ -211,6 +245,7 @@ public class CommandHandler {
                 }
                 break;
             default:
+                auditService.log(tokens[0], "Unknown or unhandled command" + (userService != null && userService.getUser() != null ? ", attemptedBy: " + userService.getUser().getUsername() : ""));
                 System.out.println("Unknown command");
         }
     }

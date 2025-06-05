@@ -60,8 +60,6 @@ public class MessageJdbcService {
                 try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
                         messageId = generatedKeys.getInt(1);
-
-                        auditService.log("CREATE_MESSAGE");
                     }
                 }
             }
@@ -130,8 +128,7 @@ public class MessageJdbcService {
                     
                     // Load delivery status
                     loadMessageDeliveryStatus(messageId, message);
-                    
-                    auditService.log("READ_MESSAGE");
+
                     return message;
                 }
             }
@@ -204,9 +201,7 @@ public class MessageJdbcService {
                     }
                 }
             }
-            
-            auditService.log("READ_CHATROOM_MESSAGES");
-            
+
         } catch (SQLException e) {
             System.err.println("Error retrieving messages for chat room: " + e.getMessage());
         }
@@ -231,7 +226,6 @@ public class MessageJdbcService {
             stmt.setInt(2, messageId);
             
             int affectedRows = stmt.executeUpdate();
-            auditService.log("UPDATE_MESSAGE");
             return affectedRows > 0;
             
         } catch (SQLException e) {
@@ -260,7 +254,6 @@ public class MessageJdbcService {
             stmt.setString(3, username);
             
             int affectedRows = stmt.executeUpdate();
-            auditService.log("UPDATE_MESSAGE_STATUS");
             return affectedRows > 0;
             
         } catch (SQLException e) {
